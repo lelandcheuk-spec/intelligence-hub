@@ -1,0 +1,11 @@
+{
+  "name": "equinix-intelligence-hub",
+  "version": "1.0.0",
+  "description": "Equinix Marketing Intelligence Hub — customer, competitive, and media listening agents with counternarrative synthesis",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "devDependencies": {
+    "vercel": "^33.0.0"
+  }
+}

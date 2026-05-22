@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Equinix Intelligence Hub</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f7f7f5;
+    --bg-tertiary: #f0efea;
+    --text-primary: #1a1a18;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --border: rgba(0,0,0,0.12);
+    --border-strong: rgba(0,0,0,0.22);
+    --accent: #0f6e56;
+    --accent-bg: #e1f5ee;
+    --accent-text: #085041;
+    --danger-bg: #fcebeb;
+    --danger-text: #a32d2d;
+    --danger-border: rgba(163,45,45,0.25);
+    --info-bg: #e6f1fb;
+    --info-text: #0c447c;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c;
+      --bg-secondary: #272725;
+      --bg-tertiary: #2e2e2b;
+      --text-primary: #f0efea;
+      --text-secondary: #b4b2a9;
+      --text-tertiary: #888780;
+      --border: rgba(255,255,255,0.1);
+      --border-strong: rgba(255,255,255,0.2);
+      --accent: #5dcaa5;
+      --accent-bg: #04342c;
+      --accent-text: #9fe1cb;
+      --danger-bg: #501313;
+      --danger-text: #f09595;
+      --danger-border: rgba(240,149,149,0.25);
+      --info-bg: #042c53;
+      --info-text: #85b7eb;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 860px;
+    background: var(--bg);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border);
+    overflow: hidden;
+  }
+
+  .header {
+    padding: 1.25rem 1.75rem 0;
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+
+  .logo {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+  }
+
+  .header-top h1 {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .badge {
+    background: var(--accent-bg);
+    color: var(--accent-text);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: auto;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 9px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tab:hover { color: var(--text-primary); }
+  .tab.active { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 500; }
+
+  .body { padding: 1.5rem 1.75rem; }
+
+  .agent-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+    gap: 12px;
+  }
+
+  .agent-meta h2 { font-size: 14px; font-weight: 500; margin-bottom: 3px; }
+  .agent-meta p { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; max-width: 520px; }
+
+  .run-btn {
+    font-size: 12.5px;
+    padding: 7px 14px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-strong);
+    background: none;
+    cursor: pointer;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    transition: background 0.12s;
+    flex-shrink: 0;
+  }
+
+  .run-btn:hover { background: var(--bg-secondary); }
+  .run-btn:disabled { opacity: 0.55; pointer-events: none; }
+
+  .config-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+
+  .config-card {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+  }
+
+  .config-label {
+    font-size: 10.5px;
+    color: var(--text-tertiary);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+  }
+
+  .config-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  .tag {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    color: var(--text-secondary);
+  }
+
+  .output-area {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border);
+    min-height: 240px;
+    padding: 1.25rem;
+    font-size: 13px;
+    line-height: 1.7;
+    position: relative;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--text-tertiary);
+    gap: 8px;
+  }
+
+  .empty-state i { font-size: 30px; }
+  .empty-state p { font-size: 12.5px; }
+
+  .loading-msg {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    height: 200px;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--text-primary);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .result-section { margin-bottom: 1.1rem; }
+  .result-section:last-child { margin-bottom: 0; }
+
+  .result-label {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .result-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 7px;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--text-primary);
+  }
+
+  .result-item::before {
+    content: "→";
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .callout {
+    font-size: 12px;
+    padding: 9px 13px;
+    border-radius: var(--radius-md);
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+
+  .callout.danger {
+    background: var(--danger-bg);
+    border: 0.5px solid var(--danger-border);
+    color: var(--danger-text);
+  }
+
+  .callout.success {
+    background: var(--accent-bg);
+    border: 0.5px solid rgba(15,110,86,0.2);
+    color: var(--accent-text);
+  }
+
+  .callout.info {
+    background: var(--info-bg);
+    border: 0.5px solid rgba(12,68,124,0.2);
+    color: var(--info-text);
+  }
+
+  .narrative-block {
+    border-left: 2px solid var(--border-strong);
+    padding-left: 14px;
+    margin-bottom: 16px;
+  }
+
+  .narrative-block:last-of-type { margin-bottom: 0; }
+
+  .narrative-title { font-size: 13px; font-weight: 500; margin-bottom: 5px; }
+
+  .narrative-body {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 7px;
+  }
+
+  .activation-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  .pill {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--info-bg);
+    color: var(--info-text);
+    cursor: default;
+  }
+
+  .agent-status-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.1rem;
+    flex-wrap: wrap;
+  }
+
+  .agent-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 0.5px solid var(--border);
+    color: var(--text-secondary);
+  }
+
+  .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--border-strong);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+
+  .dot.ready { background: var(--accent); }
+
+  .divider {
+    height: 0.5px;
+    background: var(--border);
+    margin: 1rem 0;
+  }
+
+  .error-banner {
+    background: var(--danger-bg);
+    border: 0.5px solid var(--danger-border);
+    color: var(--danger-text);
+    font-size: 12.5px;
+    padding: 10px 14px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo"><i class="ti ti-antenna" aria-hidden="true"></i></div>
+      <h1>Intelligence Hub</h1>
+      <span class="badge">4 agents · Equinix Marketing</span>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab active" role="tab" aria-selected="true" onclick="switchTab(0)">
+        <i class="ti ti-users" aria-hidden="true"></i> Customer
+      </button>
+      <button class="tab" role="tab" onclick="switchTab(1)">
+        <i class="ti ti-building-skyscraper" aria-hidden="true"></i> Competitive
+      </button>
+      <button class="tab" role="tab" onclick="switchTab(2)">
+        <i class="ti ti-news" aria-hidden="true"></i> Media &amp; Analyst
+      </button>
+      <button class="tab" role="tab" onclick="switchTab(3)">
+        <i class="ti ti-bulb" aria-hidden="true"></i> Counternarratives
+      </button>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- TAB 0: Customer -->
+    <div id="tab-0" role="tabpanel">
+      <div class="agent-header">
+        <div class="agent-meta">
+          <h2>Customer listening agent</h2>
+          <p>Scans LinkedIn, earnings calls, trade press interviews, and event sessions for signals from your six core buyer personas.</p>
+        </div>
+        <button class="run-btn" id="btn-0" onclick="runAgent(0)">
+          <i class="ti ti-player-play" aria-hidden="true"></i> Run sweep
+        </button>
+      </div>
+      <div class="config-row">
+        <div class="config-card">
+          <div class="config-label">Personas</div>
+          <div class="config-tags">
+            <span class="tag">CIO</span><span class="tag">CTO</span>
+            <span class="tag">Head of Infra</span><span class="tag">Head of Cloud / CCoE</span>
+            <span class="tag">Head of Networking</span><span class="tag">Head of AI / Data</span>
+          </div>
+        </div>
+        <div class="config-card">
+          <div class="config-label">Signal sources</div>
+          <div class="config-tags">
+            <span class="tag">LinkedIn posts</span><span class="tag">Earnings calls</span>
+            <span class="tag">Event sessions</span><span class="tag">Trade press interviews</span>
+            <span class="tag">Reddit / HN</span>
+          </div>
+        </div>
+        <div class="config-card">
+          <div class="config-label">Topics tracked</div>
+          <div class="config-tags">
+            <span class="tag">AI infra priorities</span><span class="tag">Cloud repatriation</span>
+            <span class="tag">Network complexity</span><span class="tag">Cost pressure</span>
+            <span class="tag">Compliance / sovereignty</span>
+          </div>
+        </div>
+      </div>
+      <div class="output-area" id="output-0">
+        <div class="empty-state">
+          <i class="ti ti-users" aria-hidden="true"></i>
+          <p>Run a sweep to surface persona signals</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 1: Competitive -->
+    <div id="tab-1" role="tabpanel" style="display:none">
+      <div class="agent-header">
+        <div class="agent-meta">
+          <h2>Competitive listening agent</h2>
+          <p>Monitors announcements, pricing moves, partnership news, job postings, and analyst mentions across four competitive tiers.</p>
+        </div>
+        <button class="run-btn" id="btn-1" onclick="runAgent(1)">
+          <i class="ti ti-player-play" aria-hidden="true"></i> Run sweep
+        </button>
+      </div>
+      <div class="config-row">
+        <div class="config-card">
+          <div class="config-label">Data center</div>
+          <div class="config-tags">
+            <span class="tag">Digital Realty</span><span class="tag">CoreSite</span>
+            <span class="tag">CyrusOne</span><span class="tag">Iron Mountain DC</span>
+          </div>
+        </div>
+        <div class="config-card">
+          <div class="config-label">Cloud</div>
+          <div class="config-tags">
+            <span class="tag">AWS</span><span class="tag">GCP</span>
+            <span class="tag">Azure</span><span class="tag">Oracle Cloud</span>
+          </div>
+        </div>
+        <div class="config-card">
+          <div class="config-label">NaaS</div>
+          <div class="config-tags">
+            <span class="tag">Megaport</span><span class="tag">PacketFabric</span>
+            <span class="tag">Lumen / Alkira</span>
+          </div>
+        </div>
+        <div class="config-card">
+          <div class="config-label">Neocloud</div>
+          <div class="config-tags">
+            <span class="tag">CoreWeave</span><span class="tag">Nebius</span>
+            <span class="tag">Lambda Labs</span><span class="tag">Crusoe</span>
+          </div>
+        </div>
+      </div>
+      <div class="output-area" id="output-1">
+        <div class="empty-state">
+          <i class="ti ti-building-skyscraper" aria-hidden="true"></i>
+          <p>Run a sweep to surface competitor moves</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Media & Analyst -->
+    <div id="tab-2" role="tabpanel" style="display:none">
+      <div class="agent-header">
+        <div class="agent-meta">
+          <h2>Media &amp; analyst listening agent</h2>
+          <p>Tracks research notes, reports, editorial coverage, and analyst commentary across infrastructure, AI, and sovereignty topics.</p>
+        </div>
+        <button class="run-btn" id="btn-2" onclick="runAgent(2)">
+          <i class="ti ti-player-play" aria-hidden="true"></i> Run sweep
+        </button>
+      </div>
+      <div class="config-row">
+        <div class="config-card">
+          <div class="config-label">Analyst firms</div>
+          <div class="config-tags">
+            <span class="tag">Gartner</span><span class="tag">Forrester</span>
+            <span class="tag">IDC</span><span class="tag">451 Research</span><span class="tag">Omdia</span>
+          </div>
+        </div>
+        <div class="config-card">
+          <div class="config-label">Trade press</div>
+          <div class="config-tags">
+            <span class="tag">Network World</span><span class="tag">CIO.com</span>
+            <span class="tag">The Register</span><span class="tag">TechTarget</span>
+            <span class="tag">Data Center Knowledge</span>
+          </div>
+        </div>
+        <div class="config-card">
+          <div class="config-label">Topics</div>
+          <div class="config-tags">
+            <span class="tag">AI infrastructure</span><span class="tag">Digital sovereignty</span>
+            <span class="tag">Enterprise networking</span><span class="tag">Hybrid multicloud</span>
+            <span class="tag">Private infrastructure</span>
+          </div>
+        </div>
+      </div>
+      <div class="output-area" id="output-2">
+        <div class="empty-state">
+          <i class="ti ti-news" aria-hidden="true"></i>
+          <p>Run a sweep to surface analyst and media signals</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Counternarratives -->
+    <div id="tab-3" role="tabpanel" style="display:none">
+      <div class="agent-header">
+        <div class="agent-meta">
+          <h2>Counternarrative synthesizer</h2>
+          <p>Pulls from all three listening agents and synthesizes differentiated narrative opportunities with content activation ideas.</p>
+        </div>
+        <button class="run-btn" id="btn-3" onclick="runAgent(3)">
+          <i class="ti ti-bulb" aria-hidden="true"></i> Synthesize
+        </button>
+      </div>
+      <div class="agent-status-row">
+        <div class="agent-status"><div class="dot" id="dot-0"></div> Customer agent</div>
+        <div class="agent-status"><div class="dot" id="dot-1"></div> Competitive agent</div>
+        <div class="agent-status"><div class="dot" id="dot-2"></div> Media &amp; analyst agent</div>
+      </div>
+      <div class="output-area" id="output-3">
+        <div class="empty-state">
+          <i class="ti ti-affiliate" aria-hidden="true"></i>
+          <p>Run the listening agents first, then synthesize</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const PROXY_URL = '/api/anthropic';
+
+  let agentResults = { 0: null, 1: null, 2: null };
+
+  function switchTab(n) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', i === n);
+      t.setAttribute('aria-selected', i === n);
+    });
+    [0,1,2,3].forEach(i => {
+      document.getElementById('tab-' + i).style.display = i === n ? '' : 'none';
+    });
+  }
+
+  const PROMPTS = {
+    0: `You are a B2B marketing intelligence agent for Equinix, a global digital infrastructure company. Surface what senior enterprise IT decision-makers are saying publicly right now.
+
+Scan for signals from: CIO, CTO, Head of Infrastructure, Head of Cloud / Cloud Center of Excellence, Head of Networking, Head of AI / Data Analytics.
+
+Focus on: AI infrastructure priorities, cloud repatriation and cost frustration, network complexity and latency, data sovereignty and compliance, build vs. buy vs. partner for private infrastructure.
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "top_signals": [
+    {"persona": "CIO", "signal": "...", "implication": "..."},
+    {"persona": "Head of AI / Data", "signal": "...", "implication": "..."},
+    {"persona": "Head of Cloud", "signal": "...", "implication": "..."},
+    {"persona": "CTO", "signal": "...", "implication": "..."},
+    {"persona": "Head of Networking", "signal": "...", "implication": "..."},
+    {"persona": "Head of Infrastructure", "signal": "...", "implication": "..."}
+  ],
+  "emerging_theme": "One sentence on the dominant cross-persona theme right now."
+}`,
+
+    1: `You are a competitive intelligence agent for Equinix, a global digital infrastructure company specializing in colocation, interconnection, and NaaS.
+
+Analyze recent moves from competitors across four tiers:
+- Data center: Digital Realty, CoreSite, CyrusOne, Iron Mountain DC
+- Cloud: AWS, GCP, Azure, Oracle Cloud
+- NaaS: Megaport, PacketFabric, Lumen/Alkira
+- Neocloud: CoreWeave, Nebius, Lambda Labs, Crusoe
+
+For each tier: notable announcements or moves in the past 60 days, messaging or positioning shifts, financial signals or vulnerabilities, how Equinix could counterposition.
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "tiers": [
+    {"tier": "Data center", "key_move": "...", "risk_to_equinix": "...", "counter_opportunity": "..."},
+    {"tier": "Cloud", "key_move": "...", "risk_to_equinix": "...", "counter_opportunity": "..."},
+    {"tier": "NaaS", "key_move": "...", "risk_to_equinix": "...", "counter_opportunity": "..."},
+    {"tier": "Neocloud", "key_move": "...", "risk_to_equinix": "...", "counter_opportunity": "..."}
+  ],
+  "headline_vulnerability": "The single biggest competitive threat Equinix faces right now, in one sentence."
+}`,
+
+    2: `You are a media and analyst intelligence agent for Equinix, a global digital infrastructure company.
+
+Scan recent coverage from: Gartner, Forrester, IDC, 451 Research, Omdia, Network World, CIO.com, The Register, TechTarget, Data Center Knowledge.
+
+Track: AI infrastructure, digital sovereignty and data residency, enterprise networking and security, hybrid multicloud, private infrastructure, cloud repatriation, infrastructure-as-a-platform.
+
+Identify: dominant analyst narratives to leverage or reframe, coverage gaps Equinix could own, emerging frameworks or terms gaining traction, narratives that disadvantage Equinix if left unaddressed.
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "dominant_narratives": [
+    {"topic": "...", "narrative": "...", "equinix_angle": "..."},
+    {"topic": "...", "narrative": "...", "equinix_angle": "..."},
+    {"topic": "...", "narrative": "...", "equinix_angle": "..."}
+  ],
+  "coverage_gap": "The most important underserved topic that Equinix is well-positioned to own.",
+  "rising_term": "One emerging term or framework gaining analyst traction that Equinix should incorporate into messaging."
+}`
+  };
+
+  async function runAgent(n) {
+    const btn = document.getElementById('btn-' + n);
+    const out = document.getElementById('output-' + n);
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Running\u2026';
+    out.innerHTML = '<div class="loading-msg"><div class="spinner"></div> Sweeping sources\u2026</div>';
+
+    if (n < 3) {
+      try {
+        const body = {
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{ role: 'user', content: PROMPTS[n] }]
+        };
+
+        const resp = await fetch(PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          throw new Error('API error ' + resp.status + ': ' + errText);
+        }
+
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+
+        const textBlocks = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+        let parsed = null;
+        try {
+          const clean = textBlocks.replace(/```json|```/g, '').trim();
+          const match = clean.match(/\{[\s\S]*\}/);
+          parsed = JSON.parse(match ? match[0] : clean);
+        } catch(e) {}
+
+        agentResults[n] = parsed || textBlocks;
+        renderResult(n, parsed, textBlocks);
+        document.getElementById('dot-' + n) && (document.getElementById('dot-' + n).classList.add('ready'));
+      } catch(e) {
+        out.innerHTML = '<div class="error-banner"><i class="ti ti-alert-triangle" aria-hidden="true"></i><div><strong>Error:</strong> ' + e.message + '</div></div>';
+      }
+    } else {
+      await runSynthesis();
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = n < 3
+      ? '<i class="ti ti-refresh" aria-hidden="true"></i> Re-run'
+      : '<i class="ti ti-refresh" aria-hidden="true"></i> Re-synthesize';
+  }
+
+  function renderResult(n, parsed, raw) {
+    const out = document.getElementById('output-' + n);
+    if (!parsed) {
+      out.innerHTML = '<div style="font-size:12.5px;line-height:1.7;white-space:pre-wrap;color:var(--text-secondary)">' + escHtml(raw) + '</div>';
+      return;
+    }
+
+    let html = '';
+
+    if (n === 0 && parsed.top_signals) {
+      html += '<div class="result-section"><div class="result-label">Persona signals</div>';
+      parsed.top_signals.forEach(s => {
+        html += `<div class="result-item"><div><strong>${escHtml(s.persona)}:</strong> ${escHtml(s.signal)} <span style="color:var(--text-tertiary)">→ ${escHtml(s.implication)}</span></div></div>`;
+      });
+      html += '</div>';
+      if (parsed.emerging_theme) {
+        html += `<div class="callout info"><strong>Cross-persona theme:</strong> ${escHtml(parsed.emerging_theme)}</div>`;
+      }
+    } else if (n === 1 && parsed.tiers) {
+      parsed.tiers.forEach(t => {
+        html += `<div class="result-section"><div class="result-label">${escHtml(t.tier)}</div>`;
+        html += `<div class="result-item"><div><strong>Move:</strong> ${escHtml(t.key_move)}</div></div>`;
+        html += `<div class="result-item"><div><strong>Risk:</strong> ${escHtml(t.risk_to_equinix)}</div></div>`;
+        html += `<div class="result-item"><div><strong>Counter:</strong> ${escHtml(t.counter_opportunity)}</div></div></div>`;
+      });
+      if (parsed.headline_vulnerability) {
+        html += `<div class="callout danger"><strong>Headline vulnerability:</strong> ${escHtml(parsed.headline_vulnerability)}</div>`;
+      }
+    } else if (n === 2 && parsed.dominant_narratives) {
+      html += '<div class="result-section"><div class="result-label">Dominant narratives</div>';
+      parsed.dominant_narratives.forEach(d => {
+        html += `<div class="result-item"><div><strong>${escHtml(d.topic)}:</strong> ${escHtml(d.narrative)} <span style="color:var(--text-tertiary)">→ Equinix angle: ${escHtml(d.equinix_angle)}</span></div></div>`;
+      });
+      html += '</div>';
+      if (parsed.coverage_gap) html += `<div class="result-item"><div><strong>Coverage gap to own:</strong> ${escHtml(parsed.coverage_gap)}</div></div>`;
+      if (parsed.rising_term) html += `<div class="result-item" style="margin-top:4px"><div><strong>Rising term to adopt:</strong> ${escHtml(parsed.rising_term)}</div></div>`;
+    } else {
+      html = '<div style="font-size:12.5px;line-height:1.7;white-space:pre-wrap">' + escHtml(raw) + '</div>';
+    }
+
+    out.innerHTML = html;
+  }
+
+  async function runSynthesis() {
+    const out = document.getElementById('output-3');
+    const hasData = agentResults[0] || agentResults[1] || agentResults[2];
+    if (!hasData) {
+      out.innerHTML = '<div class="error-banner"><i class="ti ti-info-circle" aria-hidden="true"></i><div>Run at least one listening agent first, then synthesize.</div></div>';
+      return;
+    }
+
+    out.innerHTML = '<div class="loading-msg"><div class="spinner"></div> Synthesizing narratives\u2026</div>';
+
+    const context = `
+CUSTOMER SIGNALS: ${JSON.stringify(agentResults[0] || 'not run')}
+COMPETITIVE SIGNALS: ${JSON.stringify(agentResults[1] || 'not run')}
+MEDIA & ANALYST SIGNALS: ${JSON.stringify(agentResults[2] || 'not run')}
+`;
+
+    const synPrompt = `You are a senior B2B marketing strategist for Equinix, a global digital infrastructure company. You specialize in thought leadership, content strategy, and competitive positioning for enterprise IT buyers (CIO, CTO, Head of Infrastructure, Head of Cloud, Head of Networking, Head of AI/Data).
+
+Equinix's key differentiators: global carrier-neutral colocation at 260+ IBX data centers, Equinix Fabric for software-defined interconnection, Network Edge for virtual network functions, a 10,000+ partner ecosystem, and a platform that enables hybrid multicloud, AI infrastructure, and digital sovereignty at scale.
+
+Using the intelligence below, synthesize 3 differentiated counternarrative opportunities. Each should:
+- Challenge a prevailing market assumption or competitor narrative
+- Be uniquely ownable by Equinix
+- Be grounded in real buyer pain or analyst insight from the signals
+
+For each, provide: a sharp narrative headline, the prevailing assumption it challenges, the Equinix proof point that makes it credible, and 3 content activation ideas (with format and distribution channel).
+
+Intelligence:
+${context}
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "counternarratives": [
+    {
+      "headline": "...",
+      "challenges": "...",
+      "equinix_proof": "...",
+      "activations": [
+        {"idea": "...", "format": "...", "channel": "..."},
+        {"idea": "...", "format": "...", "channel": "..."},
+        {"idea": "...", "format": "...", "channel": "..."}
+      ]
+    },
+    { "headline": "...", "challenges": "...", "equinix_proof": "...", "activations": [{}, {}, {}] },
+    { "headline": "...", "challenges": "...", "equinix_proof": "...", "activations": [{}, {}, {}] }
+  ],
+  "priority_narrative": "Which of the three to lead with and why, in 1-2 sentences."
+}`;
+
+    try {
+      const resp = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: synPrompt }]
+        })
+      });
+
+      if (!resp.ok) throw new Error('API error ' + resp.status);
+      const data = await resp.json();
+      if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+
+      const textBlocks = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+      let parsed = null;
+      try {
+        const clean = textBlocks.replace(/```json|```/g, '').trim();
+        const match = clean.match(/\{[\s\S]*\}/);
+        parsed = JSON.parse(match ? match[0] : clean);
+      } catch(e) {}
+
+      renderSynthesis(parsed, textBlocks);
+    } catch(e) {
+      out.innerHTML = '<div class="error-banner"><i class="ti ti-alert-triangle" aria-hidden="true"></i><div><strong>Error:</strong> ' + escHtml(e.message) + '</div></div>';
+    }
+  }
+
+  function renderSynthesis(parsed, raw) {
+    const out = document.getElementById('output-3');
+    if (!parsed || !parsed.counternarratives) {
+      out.innerHTML = '<div style="font-size:12.5px;line-height:1.7;white-space:pre-wrap">' + escHtml(raw) + '</div>';
+      return;
+    }
+
+    let html = '';
+    parsed.counternarratives.forEach((cn, i) => {
+      html += `<div class="narrative-block">
+        <div class="narrative-title">${i + 1}. ${escHtml(cn.headline)}</div>
+        <div class="narrative-body"><strong>Challenges:</strong> ${escHtml(cn.challenges)}</div>
+        <div class="narrative-body"><strong>Equinix proof:</strong> ${escHtml(cn.equinix_proof)}</div>
+        <div class="activation-pills">`;
+      (cn.activations || []).forEach(a => {
+        html += `<span class="pill" title="${escHtml(a.idea)}">${escHtml(a.format)} → ${escHtml(a.channel)}</span>`;
+      });
+      html += '</div></div>';
+    });
+
+    if (parsed.priority_narrative) {
+      html += `<div class="callout success" style="margin-top:8px"><strong>Lead with:</strong> ${escHtml(parsed.priority_narrative)}</div>`;
+    }
+
+    out.innerHTML = html;
+  }
+
+  function escHtml(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
