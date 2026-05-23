@@ -443,8 +443,9 @@
           <i class="ti ti-player-play" aria-hidden="true"></i> Run sweep
         </button>
       </div>
+      <div class="tier-hint">Click a card to toggle it on/off. Deselected scopes are omitted from the sweep.</div>
       <div class="config-row">
-        <div class="config-card">
+        <div class="config-card selectable" id="cust-personas" onclick="toggleCustomer('personas')">
           <div class="config-label">Personas</div>
           <div class="config-tags">
             <span class="tag">CIO</span><span class="tag">CTO</span>
@@ -452,7 +453,7 @@
             <span class="tag">Head of Networking</span><span class="tag">Head of AI / Data</span>
           </div>
         </div>
-        <div class="config-card">
+        <div class="config-card selectable" id="cust-sources" onclick="toggleCustomer('sources')">
           <div class="config-label">Signal sources</div>
           <div class="config-tags">
             <span class="tag">LinkedIn posts</span><span class="tag">Earnings calls</span>
@@ -460,7 +461,7 @@
             <span class="tag">Reddit / HN</span>
           </div>
         </div>
-        <div class="config-card">
+        <div class="config-card selectable" id="cust-topics" onclick="toggleCustomer('topics')">
           <div class="config-label">Topics tracked</div>
           <div class="config-tags">
             <span class="tag">AI infra priorities</span><span class="tag">Cloud repatriation</span>
@@ -538,15 +539,16 @@
           <i class="ti ti-player-play" aria-hidden="true"></i> Run sweep
         </button>
       </div>
+      <div class="tier-hint">Click a card to toggle it on/off. Deselected scopes are omitted from the sweep.</div>
       <div class="config-row">
-        <div class="config-card">
+        <div class="config-card selectable" id="media-analysts" onclick="toggleMedia('analysts')">
           <div class="config-label">Analyst firms</div>
           <div class="config-tags">
             <span class="tag">Gartner</span><span class="tag">Forrester</span>
             <span class="tag">IDC</span><span class="tag">451 Research</span><span class="tag">Omdia</span>
           </div>
         </div>
-        <div class="config-card">
+        <div class="config-card selectable" id="media-press" onclick="toggleMedia('press')">
           <div class="config-label">Trade press</div>
           <div class="config-tags">
             <span class="tag">Network World</span><span class="tag">CIO.com</span>
@@ -554,7 +556,7 @@
             <span class="tag">Data Center Knowledge</span>
           </div>
         </div>
-        <div class="config-card">
+        <div class="config-card selectable" id="media-topics" onclick="toggleMedia('topics')">
           <div class="config-label">Topics</div>
           <div class="config-tags">
             <span class="tag">AI infrastructure</span><span class="tag">Digital sovereignty</span>
@@ -625,6 +627,48 @@
     }
   }
 
+  /* ── Customer scope selection state ── */
+  const CUSTOMER_CONFIG = {
+    'personas': { items: 'CIO, CTO, Head of Infrastructure, Head of Cloud / Cloud Center of Excellence, Head of Networking, Head of AI / Data Analytics' },
+    'sources':  { items: 'LinkedIn posts, earnings calls, event sessions, trade press interviews, Reddit / HN' },
+    'topics':   { items: 'AI infrastructure priorities, cloud repatriation and cost frustration, network complexity and latency, data sovereignty and compliance, build vs. buy vs. partner for private infrastructure' }
+  };
+
+  const selectedCustomer = new Set(Object.keys(CUSTOMER_CONFIG));
+
+  function toggleCustomer(cardId) {
+    const card = document.getElementById('cust-' + cardId);
+    if (selectedCustomer.has(cardId)) {
+      if (selectedCustomer.size <= 1) return;
+      selectedCustomer.delete(cardId);
+      card.classList.add('deselected');
+    } else {
+      selectedCustomer.add(cardId);
+      card.classList.remove('deselected');
+    }
+  }
+
+  /* ── Media & Analyst scope selection state ── */
+  const MEDIA_CONFIG = {
+    'analysts': { items: 'Gartner, Forrester, IDC, 451 Research, Omdia' },
+    'press':    { items: 'Network World, CIO.com, The Register, TechTarget, Data Center Knowledge' },
+    'topics':   { items: 'AI infrastructure, digital sovereignty and data residency, enterprise networking and security, hybrid multicloud, private infrastructure, cloud repatriation, infrastructure-as-a-platform' }
+  };
+
+  const selectedMedia = new Set(Object.keys(MEDIA_CONFIG));
+
+  function toggleMedia(cardId) {
+    const card = document.getElementById('media-' + cardId);
+    if (selectedMedia.has(cardId)) {
+      if (selectedMedia.size <= 1) return;
+      selectedMedia.delete(cardId);
+      card.classList.add('deselected');
+    } else {
+      selectedMedia.add(cardId);
+      card.classList.remove('deselected');
+    }
+  }
+
   /* ── Helpers ── */
   const today = () => new Date().toISOString().split('T')[0];
 
@@ -638,40 +682,55 @@
     });
   }
 
-  /* ── System prompts (static → cached via prompt caching) ── */
-  const SYSTEM_PROMPTS = {
-    0: `You are a B2B marketing intelligence agent for Equinix, a global digital infrastructure company. Surface what senior enterprise IT decision-makers are saying publicly right now.
+  /* ── Build customer prompt dynamically from selected scope ── */
+  function buildCustomerSystemPrompt() {
+    let prompt = 'You are a B2B marketing intelligence agent for Equinix, a global digital infrastructure company. Surface what senior enterprise IT decision-makers are saying publicly right now.\n';
 
-Scan for signals from: CIO, CTO, Head of Infrastructure, Head of Cloud / Cloud Center of Excellence, Head of Networking, Head of AI / Data Analytics.
+    if (selectedCustomer.has('personas')) {
+      prompt += '\nScan for signals from: ' + CUSTOMER_CONFIG['personas'].items + '.\n';
+    }
+    if (selectedCustomer.has('sources')) {
+      prompt += '\nSearch these sources: ' + CUSTOMER_CONFIG['sources'].items + '.\n';
+    }
+    if (selectedCustomer.has('topics')) {
+      prompt += '\nFocus on: ' + CUSTOMER_CONFIG['topics'].items + '.\n';
+    }
 
-Focus on: AI infrastructure priorities, cloud repatriation and cost frustration, network complexity and latency, data sovereignty and compliance, build vs. buy vs. partner for private infrastructure.
+    prompt += '\nIMPORTANT: Only surface signals from the past 30 days. Ignore anything older.\n';
 
-IMPORTANT: Only surface signals from the past 30 days. Ignore anything older.
+    const personas = selectedCustomer.has('personas')
+      ? ['CIO', 'Head of AI / Data', 'Head of Cloud', 'CTO', 'Head of Networking', 'Head of Infrastructure']
+      : ['Decision-maker'];
+    const personaJson = personas.map(p =>
+      '    {"persona": "' + p + '", "signal": "...", "implication": "..."}'
+    ).join(',\n');
 
-Return ONLY valid JSON (no markdown, no explanation):
-{
-  "top_signals": [
-    {"persona": "CIO", "signal": "...", "implication": "..."},
-    {"persona": "Head of AI / Data", "signal": "...", "implication": "..."},
-    {"persona": "Head of Cloud", "signal": "...", "implication": "..."},
-    {"persona": "CTO", "signal": "...", "implication": "..."},
-    {"persona": "Head of Networking", "signal": "...", "implication": "..."},
-    {"persona": "Head of Infrastructure", "signal": "...", "implication": "..."}
-  ],
-  "emerging_theme": "One sentence on the dominant cross-persona theme right now."
-}`,
+    prompt += '\nReturn ONLY valid JSON (no markdown, no explanation):\n{\n  "top_signals": [\n'
+      + personaJson
+      + '\n  ],\n  "emerging_theme": "One sentence on the dominant cross-persona theme right now."\n}';
 
-    2: `You are a media and analyst intelligence agent for Equinix, a global digital infrastructure company.
+    return prompt;
+  }
 
-Scan recent coverage from: Gartner, Forrester, IDC, 451 Research, Omdia, Network World, CIO.com, The Register, TechTarget, Data Center Knowledge.
+  /* ── Build media/analyst prompt dynamically from selected scope ── */
+  function buildMediaSystemPrompt() {
+    let prompt = 'You are a media and analyst intelligence agent for Equinix, a global digital infrastructure company.\n';
 
-Track: AI infrastructure, digital sovereignty and data residency, enterprise networking and security, hybrid multicloud, private infrastructure, cloud repatriation, infrastructure-as-a-platform.
+    const sources = [];
+    if (selectedMedia.has('analysts')) sources.push(MEDIA_CONFIG['analysts'].items);
+    if (selectedMedia.has('press')) sources.push(MEDIA_CONFIG['press'].items);
+    if (sources.length > 0) {
+      prompt += '\nScan recent coverage from: ' + sources.join(', ') + '.\n';
+    }
 
-Identify: dominant analyst narratives to leverage or reframe, coverage gaps Equinix could own, emerging frameworks or terms gaining traction, narratives that disadvantage Equinix if left unaddressed.
+    if (selectedMedia.has('topics')) {
+      prompt += '\nTrack: ' + MEDIA_CONFIG['topics'].items + '.\n';
+    }
 
-IMPORTANT: Only surface coverage and commentary from the past 30 days. Ignore anything older.
+    prompt += '\nIdentify: dominant analyst narratives to leverage or reframe, coverage gaps Equinix could own, emerging frameworks or terms gaining traction, narratives that disadvantage Equinix if left unaddressed.\n';
+    prompt += '\nIMPORTANT: Only surface coverage and commentary from the past 30 days. Ignore anything older.\n';
 
-Return ONLY valid JSON (no markdown, no explanation):
+    prompt += `\nReturn ONLY valid JSON (no markdown, no explanation):
 {
   "dominant_narratives": [
     {"topic": "...", "narrative": "...", "equinix_angle": "..."},
@@ -680,8 +739,10 @@ Return ONLY valid JSON (no markdown, no explanation):
   ],
   "coverage_gap": "The most important underserved topic that Equinix is well-positioned to own.",
   "rising_term": "One emerging term or framework gaining analyst traction that Equinix should incorporate into messaging."
-}`
-  };
+}`;
+
+    return prompt;
+  }
 
   const SYNTH_SYSTEM = `You are a senior B2B marketing strategist for Equinix, a global digital infrastructure company. You specialize in thought leadership, content strategy, and competitive positioning for enterprise IT buyers (CIO, CTO, Head of Infrastructure, Head of Cloud, Head of Networking, Head of AI/Data).
 
@@ -749,7 +810,9 @@ ${tierJson}
 
     if (n < 3) {
       try {
-        const systemPrompt = n === 1 ? buildCompetitiveSystemPrompt() : SYSTEM_PROMPTS[n];
+        const systemPrompt = n === 0 ? buildCustomerSystemPrompt()
+          : n === 1 ? buildCompetitiveSystemPrompt()
+          : buildMediaSystemPrompt();
 
         const body = {
           model: 'claude-3-5-haiku-latest',
