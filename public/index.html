@@ -166,6 +166,15 @@
   .run-btn:hover { background: var(--bg-secondary); }
   .run-btn:disabled { opacity: 0.55; pointer-events: none; }
 
+  .run-all-btn {
+    background: var(--accent-bg);
+    border-color: var(--accent) !important;
+    color: var(--accent-text);
+    margin-left: 8px;
+  }
+
+  .run-all-btn:hover { background: var(--accent-bg); opacity: 0.85; }
+
   .config-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -178,6 +187,15 @@
     border-radius: var(--radius-md);
     padding: 10px 12px;
   }
+
+  .config-card.selectable {
+    cursor: pointer;
+    transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
+    border: 1.5px solid transparent;
+  }
+
+  .config-card.selectable:hover { border-color: var(--accent); }
+  .config-card.selectable.deselected { opacity: 0.35; border-color: transparent; }
 
   .config-label {
     font-size: 10.5px;
@@ -197,6 +215,13 @@
     background: var(--bg);
     border: 0.5px solid var(--border);
     color: var(--text-secondary);
+  }
+
+  .tier-hint {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+    font-style: italic;
   }
 
   .output-area {
@@ -269,7 +294,7 @@
   }
 
   .result-item::before {
-    content: "→";
+    content: "\2192";
     color: var(--text-tertiary);
     flex-shrink: 0;
     margin-top: 1px;
@@ -385,6 +410,9 @@
       <div class="logo"><i class="ti ti-antenna" aria-hidden="true"></i></div>
       <h1>Intelligence Hub</h1>
       <span class="badge">4 agents · Equinix Marketing</span>
+      <button class="run-btn run-all-btn" id="btn-run-all" onclick="runAll()">
+        <i class="ti ti-player-play" aria-hidden="true"></i> Run all agents
+      </button>
     </div>
     <div class="tabs" role="tablist">
       <button class="tab active" role="tab" aria-selected="true" onclick="switchTab(0)">
@@ -415,8 +443,9 @@
           <i class="ti ti-player-play" aria-hidden="true"></i> Run sweep
         </button>
       </div>
+      <div class="tier-hint">Click a card to toggle it on/off. Deselected scopes are omitted from the sweep.</div>
       <div class="config-row">
-        <div class="config-card">
+        <div class="config-card selectable" id="cust-personas" onclick="toggleCustomer('personas')">
           <div class="config-label">Personas</div>
           <div class="config-tags">
             <span class="tag">CIO</span><span class="tag">CTO</span>
@@ -424,7 +453,7 @@
             <span class="tag">Head of Networking</span><span class="tag">Head of AI / Data</span>
           </div>
         </div>
-        <div class="config-card">
+        <div class="config-card selectable" id="cust-sources" onclick="toggleCustomer('sources')">
           <div class="config-label">Signal sources</div>
           <div class="config-tags">
             <span class="tag">LinkedIn posts</span><span class="tag">Earnings calls</span>
@@ -432,7 +461,7 @@
             <span class="tag">Reddit / HN</span>
           </div>
         </div>
-        <div class="config-card">
+        <div class="config-card selectable" id="cust-topics" onclick="toggleCustomer('topics')">
           <div class="config-label">Topics tracked</div>
           <div class="config-tags">
             <span class="tag">AI infra priorities</span><span class="tag">Cloud repatriation</span>
@@ -460,29 +489,30 @@
           <i class="ti ti-player-play" aria-hidden="true"></i> Run sweep
         </button>
       </div>
+      <div class="tier-hint">Click a tier to toggle it on/off. Only selected tiers are included in the sweep.</div>
       <div class="config-row">
-        <div class="config-card">
+        <div class="config-card selectable" id="tier-data-center" onclick="toggleTier('data-center')">
           <div class="config-label">Data center</div>
           <div class="config-tags">
             <span class="tag">Digital Realty</span><span class="tag">CoreSite</span>
             <span class="tag">CyrusOne</span><span class="tag">Iron Mountain DC</span>
           </div>
         </div>
-        <div class="config-card">
+        <div class="config-card selectable" id="tier-cloud" onclick="toggleTier('cloud')">
           <div class="config-label">Cloud</div>
           <div class="config-tags">
             <span class="tag">AWS</span><span class="tag">GCP</span>
             <span class="tag">Azure</span><span class="tag">Oracle Cloud</span>
           </div>
         </div>
-        <div class="config-card">
+        <div class="config-card selectable" id="tier-naas" onclick="toggleTier('naas')">
           <div class="config-label">NaaS</div>
           <div class="config-tags">
             <span class="tag">Megaport</span><span class="tag">PacketFabric</span>
             <span class="tag">Lumen / Alkira</span>
           </div>
         </div>
-        <div class="config-card">
+        <div class="config-card selectable" id="tier-neocloud" onclick="toggleTier('neocloud')">
           <div class="config-label">Neocloud</div>
           <div class="config-tags">
             <span class="tag">CoreWeave</span><span class="tag">Nebius</span>
@@ -509,15 +539,16 @@
           <i class="ti ti-player-play" aria-hidden="true"></i> Run sweep
         </button>
       </div>
+      <div class="tier-hint">Click a card to toggle it on/off. Deselected scopes are omitted from the sweep.</div>
       <div class="config-row">
-        <div class="config-card">
+        <div class="config-card selectable" id="media-analysts" onclick="toggleMedia('analysts')">
           <div class="config-label">Analyst firms</div>
           <div class="config-tags">
             <span class="tag">Gartner</span><span class="tag">Forrester</span>
             <span class="tag">IDC</span><span class="tag">451 Research</span><span class="tag">Omdia</span>
           </div>
         </div>
-        <div class="config-card">
+        <div class="config-card selectable" id="media-press" onclick="toggleMedia('press')">
           <div class="config-label">Trade press</div>
           <div class="config-tags">
             <span class="tag">Network World</span><span class="tag">CIO.com</span>
@@ -525,7 +556,7 @@
             <span class="tag">Data Center Knowledge</span>
           </div>
         </div>
-        <div class="config-card">
+        <div class="config-card selectable" id="media-topics" onclick="toggleMedia('topics')">
           <div class="config-label">Topics</div>
           <div class="config-tags">
             <span class="tag">AI infrastructure</span><span class="tag">Digital sovereignty</span>
@@ -574,6 +605,73 @@
 
   let agentResults = { 0: null, 1: null, 2: null };
 
+  /* ── Competitive tier selection state ── */
+  const COMP_TIERS = {
+    'data-center': { tier: 'Data center', companies: 'Digital Realty, CoreSite, CyrusOne, Iron Mountain DC' },
+    'cloud':       { tier: 'Cloud',       companies: 'AWS, GCP, Azure, Oracle Cloud' },
+    'naas':        { tier: 'NaaS',        companies: 'Megaport, PacketFabric, Lumen/Alkira' },
+    'neocloud':    { tier: 'Neocloud',    companies: 'CoreWeave, Nebius, Lambda Labs, Crusoe' }
+  };
+
+  const selectedCompTiers = new Set(Object.keys(COMP_TIERS));
+
+  function toggleTier(tierId) {
+    const card = document.getElementById('tier-' + tierId);
+    if (selectedCompTiers.has(tierId)) {
+      if (selectedCompTiers.size <= 1) return;       // keep at least one
+      selectedCompTiers.delete(tierId);
+      card.classList.add('deselected');
+    } else {
+      selectedCompTiers.add(tierId);
+      card.classList.remove('deselected');
+    }
+  }
+
+  /* ── Customer scope selection state ── */
+  const CUSTOMER_CONFIG = {
+    'personas': { items: 'CIO, CTO, Head of Infrastructure, Head of Cloud / Cloud Center of Excellence, Head of Networking, Head of AI / Data Analytics' },
+    'sources':  { items: 'LinkedIn posts, earnings calls, event sessions, trade press interviews, Reddit / HN' },
+    'topics':   { items: 'AI infrastructure priorities, cloud repatriation and cost frustration, network complexity and latency, data sovereignty and compliance, build vs. buy vs. partner for private infrastructure' }
+  };
+
+  const selectedCustomer = new Set(Object.keys(CUSTOMER_CONFIG));
+
+  function toggleCustomer(cardId) {
+    const card = document.getElementById('cust-' + cardId);
+    if (selectedCustomer.has(cardId)) {
+      if (selectedCustomer.size <= 1) return;
+      selectedCustomer.delete(cardId);
+      card.classList.add('deselected');
+    } else {
+      selectedCustomer.add(cardId);
+      card.classList.remove('deselected');
+    }
+  }
+
+  /* ── Media & Analyst scope selection state ── */
+  const MEDIA_CONFIG = {
+    'analysts': { items: 'Gartner, Forrester, IDC, 451 Research, Omdia' },
+    'press':    { items: 'Network World, CIO.com, The Register, TechTarget, Data Center Knowledge' },
+    'topics':   { items: 'AI infrastructure, digital sovereignty and data residency, enterprise networking and security, hybrid multicloud, private infrastructure, cloud repatriation, infrastructure-as-a-platform' }
+  };
+
+  const selectedMedia = new Set(Object.keys(MEDIA_CONFIG));
+
+  function toggleMedia(cardId) {
+    const card = document.getElementById('media-' + cardId);
+    if (selectedMedia.has(cardId)) {
+      if (selectedMedia.size <= 1) return;
+      selectedMedia.delete(cardId);
+      card.classList.add('deselected');
+    } else {
+      selectedMedia.add(cardId);
+      card.classList.remove('deselected');
+    }
+  }
+
+  /* ── Helpers ── */
+  const today = () => new Date().toISOString().split('T')[0];
+
   function switchTab(n) {
     document.querySelectorAll('.tab').forEach((t, i) => {
       t.classList.toggle('active', i === n);
@@ -584,56 +682,55 @@
     });
   }
 
-  const PROMPTS = {
-    0: `You are a B2B marketing intelligence agent for Equinix, a global digital infrastructure company. Surface what senior enterprise IT decision-makers are saying publicly right now.
+  /* ── Build customer prompt dynamically from selected scope ── */
+  function buildCustomerSystemPrompt() {
+    let prompt = 'You are a B2B marketing intelligence agent for Equinix, a global digital infrastructure company. Surface what senior enterprise IT decision-makers are saying publicly right now.\n';
 
-Scan for signals from: CIO, CTO, Head of Infrastructure, Head of Cloud / Cloud Center of Excellence, Head of Networking, Head of AI / Data Analytics.
+    if (selectedCustomer.has('personas')) {
+      prompt += '\nScan for signals from: ' + CUSTOMER_CONFIG['personas'].items + '.\n';
+    }
+    if (selectedCustomer.has('sources')) {
+      prompt += '\nSearch these sources: ' + CUSTOMER_CONFIG['sources'].items + '.\n';
+    }
+    if (selectedCustomer.has('topics')) {
+      prompt += '\nFocus on: ' + CUSTOMER_CONFIG['topics'].items + '.\n';
+    }
 
-Focus on: AI infrastructure priorities, cloud repatriation and cost frustration, network complexity and latency, data sovereignty and compliance, build vs. buy vs. partner for private infrastructure.
+    prompt += '\nIMPORTANT: Only surface signals from the past 30 days. Ignore anything older.\n';
 
-Return ONLY valid JSON (no markdown, no explanation):
-{
-  "top_signals": [
-    {"persona": "CIO", "signal": "...", "implication": "..."},
-    {"persona": "Head of AI / Data", "signal": "...", "implication": "..."},
-    {"persona": "Head of Cloud", "signal": "...", "implication": "..."},
-    {"persona": "CTO", "signal": "...", "implication": "..."},
-    {"persona": "Head of Networking", "signal": "...", "implication": "..."},
-    {"persona": "Head of Infrastructure", "signal": "...", "implication": "..."}
-  ],
-  "emerging_theme": "One sentence on the dominant cross-persona theme right now."
-}`,
+    const personas = selectedCustomer.has('personas')
+      ? ['CIO', 'Head of AI / Data', 'Head of Cloud', 'CTO', 'Head of Networking', 'Head of Infrastructure']
+      : ['Decision-maker'];
+    const personaJson = personas.map(p =>
+      '    {"persona": "' + p + '", "signal": "...", "implication": "..."}'
+    ).join(',\n');
 
-    1: `You are a competitive intelligence agent for Equinix, a global digital infrastructure company specializing in colocation, interconnection, and NaaS.
+    prompt += '\nReturn ONLY valid JSON (no markdown, no explanation):\n{\n  "top_signals": [\n'
+      + personaJson
+      + '\n  ],\n  "emerging_theme": "One sentence on the dominant cross-persona theme right now."\n}';
 
-Analyze recent moves from competitors across four tiers:
-- Data center: Digital Realty, CoreSite, CyrusOne, Iron Mountain DC
-- Cloud: AWS, GCP, Azure, Oracle Cloud
-- NaaS: Megaport, PacketFabric, Lumen/Alkira
-- Neocloud: CoreWeave, Nebius, Lambda Labs, Crusoe
+    return prompt;
+  }
 
-For each tier: notable announcements or moves in the past 60 days, messaging or positioning shifts, financial signals or vulnerabilities, how Equinix could counterposition.
+  /* ── Build media/analyst prompt dynamically from selected scope ── */
+  function buildMediaSystemPrompt() {
+    let prompt = 'You are a media and analyst intelligence agent for Equinix, a global digital infrastructure company.\n';
 
-Return ONLY valid JSON (no markdown, no explanation):
-{
-  "tiers": [
-    {"tier": "Data center", "key_move": "...", "risk_to_equinix": "...", "counter_opportunity": "..."},
-    {"tier": "Cloud", "key_move": "...", "risk_to_equinix": "...", "counter_opportunity": "..."},
-    {"tier": "NaaS", "key_move": "...", "risk_to_equinix": "...", "counter_opportunity": "..."},
-    {"tier": "Neocloud", "key_move": "...", "risk_to_equinix": "...", "counter_opportunity": "..."}
-  ],
-  "headline_vulnerability": "The single biggest competitive threat Equinix faces right now, in one sentence."
-}`,
+    const sources = [];
+    if (selectedMedia.has('analysts')) sources.push(MEDIA_CONFIG['analysts'].items);
+    if (selectedMedia.has('press')) sources.push(MEDIA_CONFIG['press'].items);
+    if (sources.length > 0) {
+      prompt += '\nScan recent coverage from: ' + sources.join(', ') + '.\n';
+    }
 
-    2: `You are a media and analyst intelligence agent for Equinix, a global digital infrastructure company.
+    if (selectedMedia.has('topics')) {
+      prompt += '\nTrack: ' + MEDIA_CONFIG['topics'].items + '.\n';
+    }
 
-Scan recent coverage from: Gartner, Forrester, IDC, 451 Research, Omdia, Network World, CIO.com, The Register, TechTarget, Data Center Knowledge.
+    prompt += '\nIdentify: dominant analyst narratives to leverage or reframe, coverage gaps Equinix could own, emerging frameworks or terms gaining traction, narratives that disadvantage Equinix if left unaddressed.\n';
+    prompt += '\nIMPORTANT: Only surface coverage and commentary from the past 30 days. Ignore anything older.\n';
 
-Track: AI infrastructure, digital sovereignty and data residency, enterprise networking and security, hybrid multicloud, private infrastructure, cloud repatriation, infrastructure-as-a-platform.
-
-Identify: dominant analyst narratives to leverage or reframe, coverage gaps Equinix could own, emerging frameworks or terms gaining traction, narratives that disadvantage Equinix if left unaddressed.
-
-Return ONLY valid JSON (no markdown, no explanation):
+    prompt += `\nReturn ONLY valid JSON (no markdown, no explanation):
 {
   "dominant_narratives": [
     {"topic": "...", "narrative": "...", "equinix_angle": "..."},
@@ -642,23 +739,91 @@ Return ONLY valid JSON (no markdown, no explanation):
   ],
   "coverage_gap": "The most important underserved topic that Equinix is well-positioned to own.",
   "rising_term": "One emerging term or framework gaining analyst traction that Equinix should incorporate into messaging."
-}`
-  };
+}`;
 
+    return prompt;
+  }
+
+  const SYNTH_SYSTEM = `You are a senior B2B marketing strategist for Equinix, a global digital infrastructure company. You specialize in thought leadership, content strategy, and competitive positioning for enterprise IT buyers (CIO, CTO, Head of Infrastructure, Head of Cloud, Head of Networking, Head of AI/Data).
+
+Equinix's key differentiators: global carrier-neutral colocation at 260+ IBX data centers, Equinix Fabric for software-defined interconnection, Network Edge for virtual network functions, a 10,000+ partner ecosystem, and a platform that enables hybrid multicloud, AI infrastructure, and digital sovereignty at scale.
+
+Synthesize 3 differentiated counternarrative opportunities. Each should:
+- Challenge a prevailing market assumption or competitor narrative
+- Be uniquely ownable by Equinix
+- Be grounded in real buyer pain or analyst insight from the signals provided
+
+For each, provide: a sharp narrative headline, the prevailing assumption it challenges, the Equinix proof point that makes it credible, and 3 content activation ideas (with format and distribution channel).
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "counternarratives": [
+    {
+      "headline": "...",
+      "challenges": "...",
+      "equinix_proof": "...",
+      "activations": [
+        {"idea": "...", "format": "...", "channel": "..."},
+        {"idea": "...", "format": "...", "channel": "..."},
+        {"idea": "...", "format": "...", "channel": "..."}
+      ]
+    },
+    { "headline": "...", "challenges": "...", "equinix_proof": "...", "activations": [{"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}] },
+    { "headline": "...", "challenges": "...", "equinix_proof": "...", "activations": [{"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}] }
+  ],
+  "priority_narrative": "Which of the three to lead with and why, in 1-2 sentences."
+}`;
+
+  /* ── Build competitive prompt dynamically from selected tiers ── */
+  function buildCompetitiveSystemPrompt() {
+    const tiers = Array.from(selectedCompTiers).map(id => COMP_TIERS[id]);
+    const tierList = tiers.map(t => '- ' + t.tier + ': ' + t.companies).join('\n');
+    const tierJson = tiers.map(t =>
+      '    {"tier": "' + t.tier + '", "key_move": "...", "risk_to_equinix": "...", "counter_opportunity": "..."}'
+    ).join(',\n');
+
+    return `You are a competitive intelligence agent for Equinix, a global digital infrastructure company specializing in colocation, interconnection, and NaaS.
+
+Analyze recent moves from competitors in these tiers:
+${tierList}
+
+For each tier: notable announcements or moves, messaging or positioning shifts, financial signals or vulnerabilities, how Equinix could counterposition.
+
+IMPORTANT: Only surface moves from the past 30 days. Ignore anything older.
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "tiers": [
+${tierJson}
+  ],
+  "headline_vulnerability": "The single biggest competitive threat Equinix faces right now, in one sentence."
+}`;
+  }
+
+  /* ── Run a single listening agent (0-2) or the synthesizer (3) ── */
   async function runAgent(n) {
     const btn = document.getElementById('btn-' + n);
     const out = document.getElementById('output-' + n);
     btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div> Running\u2026';
-    out.innerHTML = '<div class="loading-msg"><div class="spinner"></div> Sweeping sources\u2026</div>';
+    btn.innerHTML = '<div class="spinner"></div> Running…';
+    out.innerHTML = '<div class="loading-msg"><div class="spinner"></div> Sweeping sources…</div>';
 
     if (n < 3) {
       try {
+        const systemPrompt = n === 0 ? buildCustomerSystemPrompt()
+          : n === 1 ? buildCompetitiveSystemPrompt()
+          : buildMediaSystemPrompt();
+
         const body = {
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
+          model: 'claude-3-5-haiku-latest',
+          max_tokens: 2048,
+          system: [{
+            type: 'text',
+            text: systemPrompt,
+            cache_control: { type: 'ephemeral' }
+          }],
           tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-          messages: [{ role: 'user', content: PROMPTS[n] }]
+          messages: [{ role: 'user', content: 'Run the sweep now. Today’s date is ' + today() + '.' }]
         };
 
         const resp = await fetch(PROXY_URL, {
@@ -685,7 +850,8 @@ Return ONLY valid JSON (no markdown, no explanation):
 
         agentResults[n] = parsed || textBlocks;
         renderResult(n, parsed, textBlocks);
-        document.getElementById('dot-' + n) && (document.getElementById('dot-' + n).classList.add('ready'));
+        const dot = document.getElementById('dot-' + n);
+        if (dot) dot.classList.add('ready');
       } catch(e) {
         out.innerHTML = '<div class="error-banner"><i class="ti ti-alert-triangle" aria-hidden="true"></i><div><strong>Error:</strong> ' + e.message + '</div></div>';
       }
@@ -699,6 +865,19 @@ Return ONLY valid JSON (no markdown, no explanation):
       : '<i class="ti ti-refresh" aria-hidden="true"></i> Re-synthesize';
   }
 
+  /* ── Run all 3 listening agents in parallel ── */
+  async function runAll() {
+    const btn = document.getElementById('btn-run-all');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Running all…';
+
+    await Promise.all([runAgent(0), runAgent(1), runAgent(2)]);
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-player-play" aria-hidden="true"></i> Run all agents';
+  }
+
+  /* ── Render listening agent results ── */
   function renderResult(n, parsed, raw) {
     const out = document.getElementById('output-' + n);
     if (!parsed) {
@@ -711,30 +890,30 @@ Return ONLY valid JSON (no markdown, no explanation):
     if (n === 0 && parsed.top_signals) {
       html += '<div class="result-section"><div class="result-label">Persona signals</div>';
       parsed.top_signals.forEach(s => {
-        html += `<div class="result-item"><div><strong>${escHtml(s.persona)}:</strong> ${escHtml(s.signal)} <span style="color:var(--text-tertiary)">→ ${escHtml(s.implication)}</span></div></div>`;
+        html += '<div class="result-item"><div><strong>' + escHtml(s.persona) + ':</strong> ' + escHtml(s.signal) + ' <span style="color:var(--text-tertiary)">→ ' + escHtml(s.implication) + '</span></div></div>';
       });
       html += '</div>';
       if (parsed.emerging_theme) {
-        html += `<div class="callout info"><strong>Cross-persona theme:</strong> ${escHtml(parsed.emerging_theme)}</div>`;
+        html += '<div class="callout info"><strong>Cross-persona theme:</strong> ' + escHtml(parsed.emerging_theme) + '</div>';
       }
     } else if (n === 1 && parsed.tiers) {
       parsed.tiers.forEach(t => {
-        html += `<div class="result-section"><div class="result-label">${escHtml(t.tier)}</div>`;
-        html += `<div class="result-item"><div><strong>Move:</strong> ${escHtml(t.key_move)}</div></div>`;
-        html += `<div class="result-item"><div><strong>Risk:</strong> ${escHtml(t.risk_to_equinix)}</div></div>`;
-        html += `<div class="result-item"><div><strong>Counter:</strong> ${escHtml(t.counter_opportunity)}</div></div></div>`;
+        html += '<div class="result-section"><div class="result-label">' + escHtml(t.tier) + '</div>';
+        html += '<div class="result-item"><div><strong>Move:</strong> ' + escHtml(t.key_move) + '</div></div>';
+        html += '<div class="result-item"><div><strong>Risk:</strong> ' + escHtml(t.risk_to_equinix) + '</div></div>';
+        html += '<div class="result-item"><div><strong>Counter:</strong> ' + escHtml(t.counter_opportunity) + '</div></div></div>';
       });
       if (parsed.headline_vulnerability) {
-        html += `<div class="callout danger"><strong>Headline vulnerability:</strong> ${escHtml(parsed.headline_vulnerability)}</div>`;
+        html += '<div class="callout danger"><strong>Headline vulnerability:</strong> ' + escHtml(parsed.headline_vulnerability) + '</div>';
       }
     } else if (n === 2 && parsed.dominant_narratives) {
       html += '<div class="result-section"><div class="result-label">Dominant narratives</div>';
       parsed.dominant_narratives.forEach(d => {
-        html += `<div class="result-item"><div><strong>${escHtml(d.topic)}:</strong> ${escHtml(d.narrative)} <span style="color:var(--text-tertiary)">→ Equinix angle: ${escHtml(d.equinix_angle)}</span></div></div>`;
+        html += '<div class="result-item"><div><strong>' + escHtml(d.topic) + ':</strong> ' + escHtml(d.narrative) + ' <span style="color:var(--text-tertiary)">→ Equinix angle: ' + escHtml(d.equinix_angle) + '</span></div></div>';
       });
       html += '</div>';
-      if (parsed.coverage_gap) html += `<div class="result-item"><div><strong>Coverage gap to own:</strong> ${escHtml(parsed.coverage_gap)}</div></div>`;
-      if (parsed.rising_term) html += `<div class="result-item" style="margin-top:4px"><div><strong>Rising term to adopt:</strong> ${escHtml(parsed.rising_term)}</div></div>`;
+      if (parsed.coverage_gap) html += '<div class="result-item"><div><strong>Coverage gap to own:</strong> ' + escHtml(parsed.coverage_gap) + '</div></div>';
+      if (parsed.rising_term) html += '<div class="result-item" style="margin-top:4px"><div><strong>Rising term to adopt:</strong> ' + escHtml(parsed.rising_term) + '</div></div>';
     } else {
       html = '<div style="font-size:12.5px;line-height:1.7;white-space:pre-wrap">' + escHtml(raw) + '</div>';
     }
@@ -742,6 +921,7 @@ Return ONLY valid JSON (no markdown, no explanation):
     out.innerHTML = html;
   }
 
+  /* ── Synthesizer: uses Sonnet for deeper analysis, cached system prompt ── */
   async function runSynthesis() {
     const out = document.getElementById('output-3');
     const hasData = agentResults[0] || agentResults[1] || agentResults[2];
@@ -750,55 +930,26 @@ Return ONLY valid JSON (no markdown, no explanation):
       return;
     }
 
-    out.innerHTML = '<div class="loading-msg"><div class="spinner"></div> Synthesizing narratives\u2026</div>';
+    out.innerHTML = '<div class="loading-msg"><div class="spinner"></div> Synthesizing narratives…</div>';
 
-    const context = `
-CUSTOMER SIGNALS: ${JSON.stringify(agentResults[0] || 'not run')}
-COMPETITIVE SIGNALS: ${JSON.stringify(agentResults[1] || 'not run')}
-MEDIA & ANALYST SIGNALS: ${JSON.stringify(agentResults[2] || 'not run')}
-`;
-
-    const synPrompt = `You are a senior B2B marketing strategist for Equinix, a global digital infrastructure company. You specialize in thought leadership, content strategy, and competitive positioning for enterprise IT buyers (CIO, CTO, Head of Infrastructure, Head of Cloud, Head of Networking, Head of AI/Data).
-
-Equinix's key differentiators: global carrier-neutral colocation at 260+ IBX data centers, Equinix Fabric for software-defined interconnection, Network Edge for virtual network functions, a 10,000+ partner ecosystem, and a platform that enables hybrid multicloud, AI infrastructure, and digital sovereignty at scale.
-
-Using the intelligence below, synthesize 3 differentiated counternarrative opportunities. Each should:
-- Challenge a prevailing market assumption or competitor narrative
-- Be uniquely ownable by Equinix
-- Be grounded in real buyer pain or analyst insight from the signals
-
-For each, provide: a sharp narrative headline, the prevailing assumption it challenges, the Equinix proof point that makes it credible, and 3 content activation ideas (with format and distribution channel).
-
-Intelligence:
-${context}
-
-Return ONLY valid JSON (no markdown, no explanation):
-{
-  "counternarratives": [
-    {
-      "headline": "...",
-      "challenges": "...",
-      "equinix_proof": "...",
-      "activations": [
-        {"idea": "...", "format": "...", "channel": "..."},
-        {"idea": "...", "format": "...", "channel": "..."},
-        {"idea": "...", "format": "...", "channel": "..."}
-      ]
-    },
-    { "headline": "...", "challenges": "...", "equinix_proof": "...", "activations": [{}, {}, {}] },
-    { "headline": "...", "challenges": "...", "equinix_proof": "...", "activations": [{}, {}, {}] }
-  ],
-  "priority_narrative": "Which of the three to lead with and why, in 1-2 sentences."
-}`;
+    const context = 'Using the intelligence below, synthesize counternarrative opportunities.\n\n'
+      + 'CUSTOMER SIGNALS: ' + JSON.stringify(agentResults[0] || 'not run') + '\n'
+      + 'COMPETITIVE SIGNALS: ' + JSON.stringify(agentResults[1] || 'not run') + '\n'
+      + 'MEDIA & ANALYST SIGNALS: ' + JSON.stringify(agentResults[2] || 'not run');
 
     try {
       const resp = await fetch(PROXY_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: synPrompt }]
+          model: 'claude-sonnet-4-5',
+          max_tokens: 2048,
+          system: [{
+            type: 'text',
+            text: SYNTH_SYSTEM,
+            cache_control: { type: 'ephemeral' }
+          }],
+          messages: [{ role: 'user', content: context }]
         })
       });
 
@@ -829,19 +980,19 @@ Return ONLY valid JSON (no markdown, no explanation):
 
     let html = '';
     parsed.counternarratives.forEach((cn, i) => {
-      html += `<div class="narrative-block">
-        <div class="narrative-title">${i + 1}. ${escHtml(cn.headline)}</div>
-        <div class="narrative-body"><strong>Challenges:</strong> ${escHtml(cn.challenges)}</div>
-        <div class="narrative-body"><strong>Equinix proof:</strong> ${escHtml(cn.equinix_proof)}</div>
-        <div class="activation-pills">`;
+      html += '<div class="narrative-block">'
+        + '<div class="narrative-title">' + (i + 1) + '. ' + escHtml(cn.headline) + '</div>'
+        + '<div class="narrative-body"><strong>Challenges:</strong> ' + escHtml(cn.challenges) + '</div>'
+        + '<div class="narrative-body"><strong>Equinix proof:</strong> ' + escHtml(cn.equinix_proof) + '</div>'
+        + '<div class="activation-pills">';
       (cn.activations || []).forEach(a => {
-        html += `<span class="pill" title="${escHtml(a.idea)}">${escHtml(a.format)} → ${escHtml(a.channel)}</span>`;
+        html += '<span class="pill" title="' + escHtml(a.idea) + '">' + escHtml(a.format) + ' → ' + escHtml(a.channel) + '</span>';
       });
       html += '</div></div>';
     });
 
     if (parsed.priority_narrative) {
-      html += `<div class="callout success" style="margin-top:8px"><strong>Lead with:</strong> ${escHtml(parsed.priority_narrative)}</div>`;
+      html += '<div class="callout success" style="margin-top:8px"><strong>Lead with:</strong> ' + escHtml(parsed.priority_narrative) + '</div>';
     }
 
     out.innerHTML = html;
