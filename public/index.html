@@ -696,7 +696,7 @@
       prompt += '\nFocus on: ' + CUSTOMER_CONFIG['topics'].items + '.\n';
     }
 
-    prompt += '\nIMPORTANT: Only surface signals from the past 30 days. Ignore anything older.\n';
+    prompt += '\nIMPORTANT: Only surface signals from the past 30 days. Ignore anything older.\nIMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.\n';
 
     const personas = selectedCustomer.has('personas')
       ? ['CIO', 'Head of AI / Data', 'Head of Cloud', 'CTO', 'Head of Networking', 'Head of Infrastructure']
@@ -728,7 +728,7 @@
     }
 
     prompt += '\nIdentify: dominant analyst narratives to leverage or reframe, coverage gaps Equinix could own, emerging frameworks or terms gaining traction, narratives that disadvantage Equinix if left unaddressed.\n';
-    prompt += '\nIMPORTANT: Only surface coverage and commentary from the past 30 days. Ignore anything older.\n';
+    prompt += '\nIMPORTANT: Only surface coverage and commentary from the past 30 days. Ignore anything older.\nIMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.\n';
 
     prompt += `\nReturn ONLY valid JSON (no markdown, no explanation):
 {
@@ -790,6 +790,7 @@ ${tierList}
 For each tier: notable announcements or moves, messaging or positioning shifts, financial signals or vulnerabilities, how Equinix could counterposition.
 
 IMPORTANT: Only surface moves from the past 30 days. Ignore anything older.
+IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
@@ -816,7 +817,7 @@ ${tierJson}
 
         const body = {
           model: 'claude-3-5-haiku-latest',
-          max_tokens: 2048,
+          max_tokens: 4096,
           system: [{
             type: 'text',
             text: systemPrompt,
@@ -943,7 +944,7 @@ ${tierJson}
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-5',
-          max_tokens: 2048,
+          max_tokens: 4096,
           system: [{
             type: 'text',
             text: SYNTH_SYSTEM,
