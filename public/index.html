@@ -684,7 +684,7 @@
 
   /* ── Build customer prompt dynamically from selected scope ── */
   function buildCustomerSystemPrompt() {
-    let prompt = 'You are a B2B marketing intelligence agent for Equinix, a global digital infrastructure company. Surface what senior enterprise IT decision-makers are saying publicly right now.\n';
+    let prompt = 'You are an independent market research analyst monitoring enterprise IT decision-maker sentiment. Report what buyers are actually saying in their own words — not what any vendor wants to hear.\n';
 
     if (selectedCustomer.has('personas')) {
       prompt += '\nScan for signals from: ' + CUSTOMER_CONFIG['personas'].items + '.\n';
@@ -696,13 +696,16 @@
       prompt += '\nFocus on: ' + CUSTOMER_CONFIG['topics'].items + '.\n';
     }
 
-    prompt += '\nIMPORTANT: Only surface signals from the past 30 days. Ignore anything older.\nIMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.\n';
+    prompt += '\nIMPORTANT: Only surface signals from the past 30 days. Ignore anything older.';
+    prompt += '\nIMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.';
+    prompt += '\nIMPORTANT: Use the language buyers actually use — not vendor marketing language. Do NOT use Equinix product names, branded terms, or jargon from Equinix.com. Report raw market sentiment honestly, including frustrations with all vendors including Equinix.';
+    prompt += '\nIMPORTANT: For each signal, include a "source" (publication or platform name) and "url" (the actual URL where you found it). Only cite real, verifiable sources.\n';
 
     const personas = selectedCustomer.has('personas')
       ? ['CIO', 'Head of AI / Data', 'Head of Cloud', 'CTO', 'Head of Networking', 'Head of Infrastructure']
       : ['Decision-maker'];
     const personaJson = personas.map(p =>
-      '    {"persona": "' + p + '", "signal": "...", "implication": "..."}'
+      '    {"persona": "' + p + '", "signal": "...", "implication": "...", "source": "...", "url": "..."}'
     ).join(',\n');
 
     prompt += '\nReturn ONLY valid JSON (no markdown, no explanation):\n{\n  "top_signals": [\n'
@@ -714,7 +717,7 @@
 
   /* ── Build media/analyst prompt dynamically from selected scope ── */
   function buildMediaSystemPrompt() {
-    let prompt = 'You are a media and analyst intelligence agent for Equinix, a global digital infrastructure company.\n';
+    let prompt = 'You are an independent media and analyst intelligence monitor. Report what analysts and journalists are actually writing — not what any vendor wants them to say.\n';
 
     const sources = [];
     if (selectedMedia.has('analysts')) sources.push(MEDIA_CONFIG['analysts'].items);
@@ -727,51 +730,54 @@
       prompt += '\nTrack: ' + MEDIA_CONFIG['topics'].items + '.\n';
     }
 
-    prompt += '\nIdentify: dominant analyst narratives to leverage or reframe, coverage gaps Equinix could own, emerging frameworks or terms gaining traction, narratives that disadvantage Equinix if left unaddressed.\n';
-    prompt += '\nIMPORTANT: Only surface coverage and commentary from the past 30 days. Ignore anything older.\nIMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.\n';
+    prompt += '\nIdentify: dominant analyst narratives shaping buyer decisions, coverage gaps no vendor is filling, emerging frameworks or terms gaining traction, and narratives that challenge the status quo in digital infrastructure.\n';
+    prompt += '\nIMPORTANT: Only surface coverage and commentary from the past 30 days. Ignore anything older.';
+    prompt += '\nIMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.';
+    prompt += '\nIMPORTANT: Report what analysts actually wrote — do NOT reframe through any vendor lens. Use the analysts own terminology, not Equinix product names or marketing language. Include critical or skeptical analyst perspectives.';
+    prompt += '\nIMPORTANT: For each narrative, include a "source" (publication name) and "url" (the actual URL). Only cite real, verifiable sources.\n';
 
     prompt += `\nReturn ONLY valid JSON (no markdown, no explanation):
 {
   "dominant_narratives": [
-    {"topic": "...", "narrative": "...", "equinix_angle": "..."},
-    {"topic": "...", "narrative": "...", "equinix_angle": "..."},
-    {"topic": "...", "narrative": "...", "equinix_angle": "..."}
+    {"topic": "...", "narrative": "...", "implication": "...", "source": "...", "url": "..."},
+    {"topic": "...", "narrative": "...", "implication": "...", "source": "...", "url": "..."},
+    {"topic": "...", "narrative": "...", "implication": "...", "source": "...", "url": "..."}
   ],
-  "coverage_gap": "The most important underserved topic that Equinix is well-positioned to own.",
-  "rising_term": "One emerging term or framework gaining analyst traction that Equinix should incorporate into messaging."
+  "coverage_gap": "The most important underserved topic in this space right now.",
+  "rising_term": "One emerging term or framework gaining analyst traction."
 }`;
 
     return prompt;
   }
 
-  const SYNTH_SYSTEM = `You are a senior B2B marketing strategist for Equinix, a global digital infrastructure company. You specialize in thought leadership, content strategy, and competitive positioning for enterprise IT buyers (CIO, CTO, Head of Infrastructure, Head of Cloud, Head of Networking, Head of AI/Data).
+  const SYNTH_SYSTEM = `You are a strategic communications advisor helping Equinix identify narrative opportunities based on real market intelligence. Your job is to find gaps between what the market believes and what is actually true — not to validate existing Equinix messaging.
 
-Equinix's key differentiators: global carrier-neutral colocation at 260+ IBX data centers, Equinix Fabric for software-defined interconnection, Network Edge for virtual network functions, a 10,000+ partner ecosystem, and a platform that enables hybrid multicloud, AI infrastructure, and digital sovereignty at scale.
+Using the intelligence provided, synthesize 3 counternarrative opportunities. Each should:
+- Challenge a real prevailing market assumption (not a straw man)
+- Be grounded in actual buyer pain or analyst insight from the signals — cite which signal it came from
+- Identify what Equinix would need to credibly prove (not just assert) to own this narrative
+- Honestly note where Equinix is strong AND where it has gaps
 
-Synthesize 3 differentiated counternarrative opportunities. Each should:
-- Challenge a prevailing market assumption or competitor narrative
-- Be uniquely ownable by Equinix
-- Be grounded in real buyer pain or analyst insight from the signals provided
-
-For each, provide: a sharp narrative headline, the prevailing assumption it challenges, the Equinix proof point that makes it credible, and 3 content activation ideas (with format and distribution channel).
-
-IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief. Headlines should be punchy (under 10 words).
+IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Headlines should be punchy (under 10 words).
+IMPORTANT: Do NOT use Equinix product names or branded terms (no "Platform Equinix", "Equinix Fabric", "IBX", etc.). Use plain industry language a buyer would use. Write as an outside advisor, not an internal marketer.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "counternarratives": [
     {
       "headline": "...",
-      "challenges": "...",
-      "equinix_proof": "...",
+      "prevailing_assumption": "...",
+      "reality": "...",
+      "equinix_credibility": "...",
+      "equinix_gap": "...",
       "activations": [
         {"idea": "...", "format": "...", "channel": "..."},
         {"idea": "...", "format": "...", "channel": "..."},
         {"idea": "...", "format": "...", "channel": "..."}
       ]
     },
-    { "headline": "...", "challenges": "...", "equinix_proof": "...", "activations": [{"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}] },
-    { "headline": "...", "challenges": "...", "equinix_proof": "...", "activations": [{"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}] }
+    { "headline": "...", "prevailing_assumption": "...", "reality": "...", "equinix_credibility": "...", "equinix_gap": "...", "activations": [{"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}] },
+    { "headline": "...", "prevailing_assumption": "...", "reality": "...", "equinix_credibility": "...", "equinix_gap": "...", "activations": [{"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}] }
   ],
   "priority_narrative": "Which of the three to lead with and why, in 1-2 sentences."
 }`;
@@ -781,25 +787,26 @@ Return ONLY valid JSON (no markdown, no explanation):
     const tiers = Array.from(selectedCompTiers).map(id => COMP_TIERS[id]);
     const tierList = tiers.map(t => '- ' + t.tier + ': ' + t.companies).join('\n');
     const tierJson = tiers.map(t =>
-      '    {"tier": "' + t.tier + '", "key_move": "...", "risk_to_equinix": "...", "counter_opportunity": "..."}'
+      '    {"tier": "' + t.tier + '", "key_move": "...", "market_risk": "...", "gap_exposed": "...", "source": "...", "url": "..."}'
     ).join(',\n');
 
-    return `You are a competitive intelligence agent for Equinix, a global digital infrastructure company specializing in colocation, interconnection, and NaaS.
+    return `You are an independent competitive intelligence analyst covering the digital infrastructure market. Report objectively on what competitors are actually doing — not through the lens of any single vendor.
 
-Analyze recent moves from competitors in these tiers:
+Analyze recent moves from these companies:
 ${tierList}
 
-For each tier: notable announcements or moves, messaging or positioning shifts, financial signals or vulnerabilities, how Equinix could counterposition.
+For each tier: what did they actually announce or do, what is the market reading into it, what real risk does this pose to incumbent colocation/interconnection providers, and what gap does it expose.
 
 IMPORTANT: Only surface moves from the past 30 days. Ignore anything older.
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
+IMPORTANT: Use neutral industry language — not any vendor's branded terms or marketing jargon. Report competitor strengths honestly, not dismissively. Include a credible source and URL for each tier.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "tiers": [
 ${tierJson}
   ],
-  "headline_vulnerability": "The single biggest competitive threat Equinix faces right now, in one sentence."
+  "headline_vulnerability": "The single biggest competitive threat to incumbent colocation providers right now, in one sentence."
 }`;
   }
 
@@ -893,7 +900,10 @@ ${tierJson}
     if (n === 0 && parsed.top_signals) {
       html += '<div class="result-section"><div class="result-label">Persona signals</div>';
       parsed.top_signals.forEach(s => {
-        html += '<div class="result-item"><div><strong>' + escHtml(s.persona) + ':</strong> ' + escHtml(s.signal) + ' <span style="color:var(--text-tertiary)">→ ' + escHtml(s.implication) + '</span></div></div>';
+        let srcLink = '';
+        if (s.source && s.url) srcLink = ' <a href="' + escHtml(s.url) + '" target="_blank" rel="noopener" style="color:var(--accent);font-size:11px">[' + escHtml(s.source) + ']</a>';
+        else if (s.source) srcLink = ' <span style="color:var(--accent);font-size:11px">[' + escHtml(s.source) + ']</span>';
+        html += '<div class="result-item"><div><strong>' + escHtml(s.persona) + ':</strong> ' + escHtml(s.signal) + ' <span style="color:var(--text-tertiary)">→ ' + escHtml(s.implication) + '</span>' + srcLink + '</div></div>';
       });
       html += '</div>';
       if (parsed.emerging_theme) {
@@ -901,10 +911,13 @@ ${tierJson}
       }
     } else if (n === 1 && parsed.tiers) {
       parsed.tiers.forEach(t => {
+        let srcLink = '';
+        if (t.source && t.url) srcLink = '<div style="margin-top:4px"><a href="' + escHtml(t.url) + '" target="_blank" rel="noopener" style="color:var(--accent);font-size:11px">[' + escHtml(t.source) + ']</a></div>';
+        else if (t.source) srcLink = '<div style="margin-top:4px"><span style="color:var(--accent);font-size:11px">[' + escHtml(t.source) + ']</span></div>';
         html += '<div class="result-section"><div class="result-label">' + escHtml(t.tier) + '</div>';
         html += '<div class="result-item"><div><strong>Move:</strong> ' + escHtml(t.key_move) + '</div></div>';
-        html += '<div class="result-item"><div><strong>Risk:</strong> ' + escHtml(t.risk_to_equinix) + '</div></div>';
-        html += '<div class="result-item"><div><strong>Counter:</strong> ' + escHtml(t.counter_opportunity) + '</div></div></div>';
+        html += '<div class="result-item"><div><strong>Risk:</strong> ' + escHtml(t.market_risk || t.risk_to_equinix || '') + '</div></div>';
+        html += '<div class="result-item"><div><strong>Gap exposed:</strong> ' + escHtml(t.gap_exposed || t.counter_opportunity || '') + srcLink + '</div></div></div>';
       });
       if (parsed.headline_vulnerability) {
         html += '<div class="callout danger"><strong>Headline vulnerability:</strong> ' + escHtml(parsed.headline_vulnerability) + '</div>';
@@ -912,11 +925,14 @@ ${tierJson}
     } else if (n === 2 && parsed.dominant_narratives) {
       html += '<div class="result-section"><div class="result-label">Dominant narratives</div>';
       parsed.dominant_narratives.forEach(d => {
-        html += '<div class="result-item"><div><strong>' + escHtml(d.topic) + ':</strong> ' + escHtml(d.narrative) + ' <span style="color:var(--text-tertiary)">→ Equinix angle: ' + escHtml(d.equinix_angle) + '</span></div></div>';
+        let srcLink = '';
+        if (d.source && d.url) srcLink = ' <a href="' + escHtml(d.url) + '" target="_blank" rel="noopener" style="color:var(--accent);font-size:11px">[' + escHtml(d.source) + ']</a>';
+        else if (d.source) srcLink = ' <span style="color:var(--accent);font-size:11px">[' + escHtml(d.source) + ']</span>';
+        html += '<div class="result-item"><div><strong>' + escHtml(d.topic) + ':</strong> ' + escHtml(d.narrative) + ' <span style="color:var(--text-tertiary)">→ ' + escHtml(d.implication || d.equinix_angle || '') + '</span>' + srcLink + '</div></div>';
       });
       html += '</div>';
-      if (parsed.coverage_gap) html += '<div class="result-item"><div><strong>Coverage gap to own:</strong> ' + escHtml(parsed.coverage_gap) + '</div></div>';
-      if (parsed.rising_term) html += '<div class="result-item" style="margin-top:4px"><div><strong>Rising term to adopt:</strong> ' + escHtml(parsed.rising_term) + '</div></div>';
+      if (parsed.coverage_gap) html += '<div class="result-item"><div><strong>Coverage gap:</strong> ' + escHtml(parsed.coverage_gap) + '</div></div>';
+      if (parsed.rising_term) html += '<div class="result-item" style="margin-top:4px"><div><strong>Rising term:</strong> ' + escHtml(parsed.rising_term) + '</div></div>';
     } else {
       html = '<div style="font-size:12.5px;line-height:1.7;white-space:pre-wrap">' + escHtml(raw) + '</div>';
     }
@@ -985,8 +1001,10 @@ ${tierJson}
     parsed.counternarratives.forEach((cn, i) => {
       html += '<div class="narrative-block">'
         + '<div class="narrative-title">' + (i + 1) + '. ' + escHtml(cn.headline) + '</div>'
-        + '<div class="narrative-body"><strong>Challenges:</strong> ' + escHtml(cn.challenges) + '</div>'
-        + '<div class="narrative-body"><strong>Equinix proof:</strong> ' + escHtml(cn.equinix_proof) + '</div>'
+        + '<div class="narrative-body"><strong>Assumption:</strong> ' + escHtml(cn.prevailing_assumption || cn.challenges || '') + '</div>'
+        + '<div class="narrative-body"><strong>Reality:</strong> ' + escHtml(cn.reality || '') + '</div>'
+        + '<div class="narrative-body"><strong>Credibility:</strong> ' + escHtml(cn.equinix_credibility || cn.equinix_proof || '') + '</div>'
+        + (cn.equinix_gap ? '<div class="narrative-body" style="color:var(--danger-text)"><strong>Gap:</strong> ' + escHtml(cn.equinix_gap) + '</div>' : '')
         + '<div class="activation-pills">';
       (cn.activations || []).forEach(a => {
         html += '<span class="pill" title="' + escHtml(a.idea) + '">' + escHtml(a.format) + ' → ' + escHtml(a.channel) + '</span>';
