@@ -413,6 +413,9 @@
       <button class="run-btn run-all-btn" id="btn-run-all" onclick="runAll()">
         <i class="ti ti-player-play" aria-hidden="true"></i> Run all agents
       </button>
+      <button class="run-btn" id="btn-email-brief" onclick="emailBrief()" style="margin-left:4px" disabled title="Run agents first">
+        <i class="ti ti-mail" aria-hidden="true"></i> Email brief
+      </button>
     </div>
     <div class="tabs" role="tablist">
       <button class="tab active" role="tab" aria-selected="true" onclick="switchTab(0)">
@@ -860,6 +863,7 @@ ${tierJson}
 
         agentResults[n] = parsed || textBlocks;
         renderResult(n, parsed, textBlocks);
+        updateEmailBtn();
         const dot = document.getElementById('dot-' + n);
         if (dot) dot.classList.add('ready');
       } catch(e) {
@@ -1022,6 +1026,117 @@ ${tierJson}
   function escHtml(str) {
     if (typeof str !== 'string') return '';
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── Email brief ── */
+  function updateEmailBtn() {
+    const btn = document.getElementById('btn-email-brief');
+    const hasData = agentResults[0] || agentResults[1] || agentResults[2];
+    btn.disabled = !hasData;
+    btn.title = hasData ? 'Email a summary of current results' : 'Run agents first';
+  }
+
+  function buildBriefHtml() {
+    const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    let body = `
+<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;max-width:680px;margin:0 auto;color:#1a1a18">
+  <div style="background:#0f6e56;color:white;padding:20px 24px;border-radius:8px 8px 0 0">
+    <h1 style="margin:0;font-size:18px;font-weight:500">Intelligence Hub Brief</h1>
+    <p style="margin:6px 0 0;font-size:13px;opacity:0.85">${dateStr}</p>
+  </div>
+  <div style="padding:24px;background:#ffffff;border:1px solid #e5e5e5;border-top:none;border-radius:0 0 8px 8px">`;
+
+    // Customer signals
+    const cust = agentResults[0];
+    if (cust && cust.top_signals) {
+      body += `<h2 style="font-size:15px;color:#0f6e56;margin:0 0 12px;border-bottom:1px solid #eee;padding-bottom:8px">Customer Listening</h2>`;
+      cust.top_signals.forEach(s => {
+        const src = s.url ? '<a href="' + s.url + '" style="color:#0f6e56;font-size:11px">[' + (s.source||'source') + ']</a>' : '';
+        body += `<div style="margin-bottom:10px;font-size:13px;line-height:1.6"><strong>${escHtml(s.persona)}:</strong> ${escHtml(s.signal)} <span style="color:#888">→ ${escHtml(s.implication)}</span> ${src}</div>`;
+      });
+      if (cust.emerging_theme) {
+        body += `<div style="background:#e6f1fb;padding:10px 14px;border-radius:6px;font-size:12px;color:#0c447c;margin:8px 0 20px"><strong>Theme:</strong> ${escHtml(cust.emerging_theme)}</div>`;
+      }
+    }
+
+    // Competitive signals
+    const comp = agentResults[1];
+    if (comp && comp.tiers) {
+      body += `<h2 style="font-size:15px;color:#0f6e56;margin:20px 0 12px;border-bottom:1px solid #eee;padding-bottom:8px">Competitive Listening</h2>`;
+      comp.tiers.forEach(t => {
+        const src = t.url ? '<a href="' + t.url + '" style="color:#0f6e56;font-size:11px">[' + (t.source||'source') + ']</a>' : '';
+        body += `<div style="margin-bottom:14px"><div style="font-size:11px;text-transform:uppercase;color:#888;font-weight:500;margin-bottom:4px">${escHtml(t.tier)}</div>`;
+        body += `<div style="font-size:13px;line-height:1.6"><strong>Move:</strong> ${escHtml(t.key_move)}</div>`;
+        body += `<div style="font-size:13px;line-height:1.6"><strong>Risk:</strong> ${escHtml(t.market_risk || t.risk_to_equinix || '')}</div>`;
+        body += `<div style="font-size:13px;line-height:1.6"><strong>Gap:</strong> ${escHtml(t.gap_exposed || t.counter_opportunity || '')} ${src}</div></div>`;
+      });
+      if (comp.headline_vulnerability) {
+        body += `<div style="background:#fcebeb;padding:10px 14px;border-radius:6px;font-size:12px;color:#a32d2d;margin:8px 0 20px"><strong>Headline vulnerability:</strong> ${escHtml(comp.headline_vulnerability)}</div>`;
+      }
+    }
+
+    // Media & Analyst signals
+    const media = agentResults[2];
+    if (media && media.dominant_narratives) {
+      body += `<h2 style="font-size:15px;color:#0f6e56;margin:20px 0 12px;border-bottom:1px solid #eee;padding-bottom:8px">Media & Analyst Listening</h2>`;
+      media.dominant_narratives.forEach(d => {
+        const src = d.url ? '<a href="' + d.url + '" style="color:#0f6e56;font-size:11px">[' + (d.source||'source') + ']</a>' : '';
+        body += `<div style="margin-bottom:10px;font-size:13px;line-height:1.6"><strong>${escHtml(d.topic)}:</strong> ${escHtml(d.narrative)} <span style="color:#888">→ ${escHtml(d.implication || '')}</span> ${src}</div>`;
+      });
+      if (media.coverage_gap) body += `<div style="font-size:13px;margin-top:8px"><strong>Coverage gap:</strong> ${escHtml(media.coverage_gap)}</div>`;
+      if (media.rising_term) body += `<div style="font-size:13px;margin-top:4px;margin-bottom:16px"><strong>Rising term:</strong> ${escHtml(media.rising_term)}</div>`;
+    }
+
+    body += `
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#888">
+      Generated by Intelligence Hub · <a href="https://intelligence-hub-psi.vercel.app" style="color:#0f6e56">Open in browser</a>
+    </div>
+  </div>
+</div>`;
+
+    return body;
+  }
+
+  async function emailBrief() {
+    const btn = document.getElementById('btn-email-brief');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Sending…';
+
+    try {
+      const resp = await fetch('/api/send-brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: 'Intelligence Hub Brief — ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          html: buildBriefHtml()
+        })
+      });
+
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed to send');
+
+      btn.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i> Sent!';
+      btn.style.background = 'var(--accent-bg)';
+      btn.style.color = 'var(--accent-text)';
+      setTimeout(() => {
+        btn.innerHTML = '<i class="ti ti-mail" aria-hidden="true"></i> Email brief';
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.disabled = false;
+      }, 3000);
+    } catch(e) {
+      btn.innerHTML = '<i class="ti ti-alert-triangle" aria-hidden="true"></i> Failed';
+      btn.style.background = 'var(--danger-bg)';
+      btn.style.color = 'var(--danger-text)';
+      setTimeout(() => {
+        btn.innerHTML = '<i class="ti ti-mail" aria-hidden="true"></i> Email brief';
+        btn.style.background = '';
+        btn.style.color = '';
+        btn.disabled = false;
+      }, 3000);
+      console.error('Email brief error:', e);
+    }
   }
 </script>
 </body>
