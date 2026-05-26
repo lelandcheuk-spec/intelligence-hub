@@ -354,6 +354,75 @@
     cursor: default;
   }
 
+  .research-brief {
+    margin-top: 1.25rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+
+  .rb-header {
+    background: var(--accent-bg);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--accent);
+  }
+
+  .rb-header i { color: var(--accent); font-size: 16px; }
+  .rb-header h3 { font-size: 13px; font-weight: 600; color: var(--accent-text); margin: 0; }
+  .rb-header span { font-size: 11px; color: var(--text-tertiary); margin-left: auto; }
+
+  .rb-body { padding: 16px; }
+
+  .rb-title { font-size: 15px; font-weight: 600; margin-bottom: 2px; color: var(--text-primary); }
+  .rb-subtitle { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 14px; }
+
+  .rb-field { margin-bottom: 14px; }
+  .rb-field-label {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    margin-bottom: 5px;
+  }
+  .rb-field-value { font-size: 12.5px; line-height: 1.6; color: var(--text-primary); }
+
+  .rb-method {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+  }
+  .rb-method:last-child { margin-bottom: 0; }
+  .rb-method-name { font-size: 12.5px; font-weight: 500; margin-bottom: 3px; }
+  .rb-method-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+  .rb-method-tradeoff { font-size: 11px; color: var(--text-tertiary); font-style: italic; margin-top: 3px; }
+
+  .rb-themes { list-style: none; padding: 0; margin: 0; }
+  .rb-themes li {
+    font-size: 12.5px;
+    padding: 4px 0;
+    border-bottom: 0.5px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .rb-themes li:last-child { border-bottom: none; }
+  .rb-themes li::before { content: "◆"; color: var(--accent); font-size: 8px; margin-top: 4px; flex-shrink: 0; }
+
+  .rb-outputs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .rb-output-tag {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--accent-bg);
+    color: var(--accent-text);
+    border: 0.5px solid rgba(15,110,86,0.2);
+  }
+
   .agent-status-row {
     display: flex;
     gap: 8px;
@@ -581,7 +650,7 @@
       <div class="agent-header">
         <div class="agent-meta">
           <h2>Counternarrative synthesizer</h2>
-          <p>Pulls from all three listening agents and synthesizes differentiated narrative opportunities with content activation ideas.</p>
+          <p>Synthesizes counternarrative opportunities from all three listening agents, then generates a research brief proposal for top-of-funnel thought leadership.</p>
         </div>
         <button class="run-btn" id="btn-3" onclick="runAgent(3)">
           <i class="ti ti-bulb" aria-hidden="true"></i> Synthesize
@@ -607,6 +676,7 @@
   const PROXY_URL = '/api/anthropic';
 
   let agentResults = { 0: null, 1: null, 2: null };
+  let synthResult = null;
 
   /* ── Competitive tier selection state ── */
   const COMP_TIERS = {
@@ -755,14 +825,31 @@
 
   const SYNTH_SYSTEM = `You are a strategic communications advisor helping Equinix identify narrative opportunities based on real market intelligence. Your job is to find gaps between what the market believes and what is actually true — not to validate existing Equinix messaging.
 
-Using the intelligence provided, synthesize 3 counternarrative opportunities. Each should:
+Using the intelligence provided, do TWO things:
+
+PART 1 — COUNTERNARRATIVES
+Synthesize 3 counternarrative opportunities. Each should:
 - Challenge a real prevailing market assumption (not a straw man)
 - Be grounded in actual buyer pain or analyst insight from the signals — cite which signal it came from
 - Identify what Equinix would need to credibly prove (not just assert) to own this narrative
 - Honestly note where Equinix is strong AND where it has gaps
 
+PART 2 — RESEARCH BRIEF PROPOSAL
+For the #1 priority counternarrative, generate a thought leadership research study proposal that Equinix could commission to build credibility and generate top-of-funnel content. This should be the kind of study that produces a flagship report, not a product brief.
+
+The research brief must include:
+- working_title: A compelling, non-branded report title (no Equinix name)
+- subtitle: A clarifying subtitle
+- central_question: The hypothesis the study will prove or disprove — frame as a question
+- respondent_profile: An object with titles (array of job titles), company_size (e.g. "1,000+ employees"), verticals (array of 4-6 target industries), geography (target regions), sample_size (recommended N with brief rationale)
+- methodology_options: Array of 3 options, each with name, description (1-2 sentences), and tradeoff (1 sentence on pros/cons)
+- research_themes: Array of exactly 5 theme strings — the major sections of the final report
+- output_formats: Array of deliverable formats (e.g. "Flagship PDF report", "Executive summary infographic", "Webinar series", etc.)
+- activation_intent: 1-2 sentences on how Equinix would use this research for demand gen and thought leadership without it feeling like a product pitch
+
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Headlines should be punchy (under 10 words).
 IMPORTANT: Do NOT use Equinix product names or branded terms (no "Platform Equinix", "Equinix Fabric", "IBX", etc.). Use plain industry language a buyer would use. Write as an outside advisor, not an internal marketer.
+IMPORTANT: The research brief title and themes should be genuinely useful to the industry — something a CIO would download even if they never buy from Equinix.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
@@ -782,7 +869,27 @@ Return ONLY valid JSON (no markdown, no explanation):
     { "headline": "...", "prevailing_assumption": "...", "reality": "...", "equinix_credibility": "...", "equinix_gap": "...", "activations": [{"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}] },
     { "headline": "...", "prevailing_assumption": "...", "reality": "...", "equinix_credibility": "...", "equinix_gap": "...", "activations": [{"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}, {"idea":"...","format":"...","channel":"..."}] }
   ],
-  "priority_narrative": "Which of the three to lead with and why, in 1-2 sentences."
+  "priority_narrative": "Which of the three to lead with and why, in 1-2 sentences.",
+  "research_brief": {
+    "working_title": "...",
+    "subtitle": "...",
+    "central_question": "...",
+    "respondent_profile": {
+      "titles": ["CIO", "CTO", "..."],
+      "company_size": "...",
+      "verticals": ["...", "...", "...", "..."],
+      "geography": "...",
+      "sample_size": "..."
+    },
+    "methodology_options": [
+      {"name": "...", "description": "...", "tradeoff": "..."},
+      {"name": "...", "description": "...", "tradeoff": "..."},
+      {"name": "...", "description": "...", "tradeoff": "..."}
+    ],
+    "research_themes": ["...", "...", "...", "...", "..."],
+    "output_formats": ["...", "...", "...", "..."],
+    "activation_intent": "..."
+  }
 }`;
 
   /* ── Build competitive prompt dynamically from selected tiers ── */
@@ -966,7 +1073,7 @@ ${tierJson}
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'claude-sonnet-4-5',
-          max_tokens: 4096,
+          max_tokens: 8192,
           system: [{
             type: 'text',
             text: SYNTH_SYSTEM,
@@ -988,6 +1095,7 @@ ${tierJson}
         parsed = JSON.parse(match ? match[0] : clean);
       } catch(e) {}
 
+      synthResult = parsed;
       renderSynthesis(parsed, textBlocks);
     } catch(e) {
       out.innerHTML = '<div class="error-banner"><i class="ti ti-alert-triangle" aria-hidden="true"></i><div><strong>Error:</strong> ' + escHtml(e.message) + '</div></div>';
@@ -1018,6 +1126,76 @@ ${tierJson}
 
     if (parsed.priority_narrative) {
       html += '<div class="callout success" style="margin-top:8px"><strong>Lead with:</strong> ' + escHtml(parsed.priority_narrative) + '</div>';
+    }
+
+    // Research Brief
+    const rb = parsed.research_brief;
+    if (rb) {
+      html += '<div class="research-brief">';
+      html += '<div class="rb-header"><i class="ti ti-report-analytics" aria-hidden="true"></i><h3>Research Brief Proposal</h3><span>Based on priority narrative</span></div>';
+      html += '<div class="rb-body">';
+
+      // Title
+      html += '<div class="rb-title">' + escHtml(rb.working_title || '') + '</div>';
+      html += '<div class="rb-subtitle">' + escHtml(rb.subtitle || '') + '</div>';
+
+      // Central question
+      html += '<div class="rb-field"><div class="rb-field-label">Central research question</div>';
+      html += '<div class="rb-field-value" style="font-style:italic">' + escHtml(rb.central_question || '') + '</div></div>';
+
+      // Respondent profile
+      if (rb.respondent_profile) {
+        const rp = rb.respondent_profile;
+        html += '<div class="rb-field"><div class="rb-field-label">Target respondent profile</div>';
+        html += '<div class="rb-field-value">';
+        if (rp.titles) html += '<div style="margin-bottom:4px"><strong>Titles:</strong> ' + escHtml(rp.titles.join(', ')) + '</div>';
+        if (rp.company_size) html += '<div style="margin-bottom:4px"><strong>Company size:</strong> ' + escHtml(rp.company_size) + '</div>';
+        if (rp.verticals) html += '<div style="margin-bottom:4px"><strong>Verticals:</strong> ' + escHtml(rp.verticals.join(', ')) + '</div>';
+        if (rp.geography) html += '<div style="margin-bottom:4px"><strong>Geography:</strong> ' + escHtml(rp.geography) + '</div>';
+        if (rp.sample_size) html += '<div><strong>Sample size:</strong> ' + escHtml(rp.sample_size) + '</div>';
+        html += '</div></div>';
+      }
+
+      // Methodology options
+      if (rb.methodology_options && rb.methodology_options.length) {
+        html += '<div class="rb-field"><div class="rb-field-label">Methodology options</div>';
+        rb.methodology_options.forEach(m => {
+          html += '<div class="rb-method">';
+          html += '<div class="rb-method-name">' + escHtml(m.name || '') + '</div>';
+          html += '<div class="rb-method-desc">' + escHtml(m.description || '') + '</div>';
+          html += '<div class="rb-method-tradeoff">Tradeoff: ' + escHtml(m.tradeoff || '') + '</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // Research themes
+      if (rb.research_themes && rb.research_themes.length) {
+        html += '<div class="rb-field"><div class="rb-field-label">Key research themes</div>';
+        html += '<ul class="rb-themes">';
+        rb.research_themes.forEach(t => {
+          html += '<li>' + escHtml(t) + '</li>';
+        });
+        html += '</ul></div>';
+      }
+
+      // Output formats
+      if (rb.output_formats && rb.output_formats.length) {
+        html += '<div class="rb-field"><div class="rb-field-label">Intended output formats</div>';
+        html += '<div class="rb-outputs">';
+        rb.output_formats.forEach(f => {
+          html += '<span class="rb-output-tag">' + escHtml(f) + '</span>';
+        });
+        html += '</div></div>';
+      }
+
+      // Activation intent
+      if (rb.activation_intent) {
+        html += '<div class="rb-field"><div class="rb-field-label">Activation &amp; distribution intent</div>';
+        html += '<div class="rb-field-value">' + escHtml(rb.activation_intent) + '</div></div>';
+      }
+
+      html += '</div></div>'; // close rb-body, research-brief
     }
 
     out.innerHTML = html;
@@ -1086,6 +1264,66 @@ ${tierJson}
       });
       if (media.coverage_gap) body += `<div style="font-size:13px;margin-top:8px"><strong>Coverage gap:</strong> ${escHtml(media.coverage_gap)}</div>`;
       if (media.rising_term) body += `<div style="font-size:13px;margin-top:4px;margin-bottom:16px"><strong>Rising term:</strong> ${escHtml(media.rising_term)}</div>`;
+    }
+
+    // Research Brief (from synthesis)
+    if (synthResult && synthResult.research_brief) {
+      const rb = synthResult.research_brief;
+      body += `<div style="margin-top:24px;border:1px solid #0f6e56;border-radius:8px;overflow:hidden">`;
+      body += `<div style="background:#e1f5ee;padding:12px 16px;border-bottom:1px solid #0f6e56"><h2 style="margin:0;font-size:14px;color:#085041">Research Brief Proposal</h2></div>`;
+      body += `<div style="padding:16px">`;
+
+      body += `<div style="font-size:16px;font-weight:600;margin-bottom:2px">${escHtml(rb.working_title || '')}</div>`;
+      body += `<div style="font-size:13px;color:#666;margin-bottom:14px">${escHtml(rb.subtitle || '')}</div>`;
+
+      body += `<div style="margin-bottom:14px"><div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin-bottom:4px">Central Research Question</div>`;
+      body += `<div style="font-size:13px;font-style:italic">${escHtml(rb.central_question || '')}</div></div>`;
+
+      if (rb.respondent_profile) {
+        const rp = rb.respondent_profile;
+        body += `<div style="margin-bottom:14px"><div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin-bottom:4px">Target Respondent Profile</div>`;
+        if (rp.titles) body += `<div style="font-size:13px;margin-bottom:3px"><strong>Titles:</strong> ${escHtml(rp.titles.join(', '))}</div>`;
+        if (rp.company_size) body += `<div style="font-size:13px;margin-bottom:3px"><strong>Company size:</strong> ${escHtml(rp.company_size)}</div>`;
+        if (rp.verticals) body += `<div style="font-size:13px;margin-bottom:3px"><strong>Verticals:</strong> ${escHtml(rp.verticals.join(', '))}</div>`;
+        if (rp.geography) body += `<div style="font-size:13px;margin-bottom:3px"><strong>Geography:</strong> ${escHtml(rp.geography)}</div>`;
+        if (rp.sample_size) body += `<div style="font-size:13px"><strong>Sample size:</strong> ${escHtml(rp.sample_size)}</div>`;
+        body += `</div>`;
+      }
+
+      if (rb.methodology_options) {
+        body += `<div style="margin-bottom:14px"><div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin-bottom:6px">Methodology Options</div>`;
+        rb.methodology_options.forEach(m => {
+          body += `<div style="background:#f7f7f5;border-radius:6px;padding:10px 12px;margin-bottom:6px">`;
+          body += `<div style="font-size:13px;font-weight:500;margin-bottom:2px">${escHtml(m.name || '')}</div>`;
+          body += `<div style="font-size:12px;color:#666">${escHtml(m.description || '')}</div>`;
+          body += `<div style="font-size:11px;color:#888;font-style:italic;margin-top:2px">Tradeoff: ${escHtml(m.tradeoff || '')}</div></div>`;
+        });
+        body += `</div>`;
+      }
+
+      if (rb.research_themes) {
+        body += `<div style="margin-bottom:14px"><div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin-bottom:4px">Key Research Themes</div>`;
+        rb.research_themes.forEach(t => {
+          body += `<div style="font-size:13px;padding:3px 0;border-bottom:1px solid #eee">◆ ${escHtml(t)}</div>`;
+        });
+        body += `</div>`;
+      }
+
+      if (rb.output_formats) {
+        body += `<div style="margin-bottom:14px"><div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin-bottom:6px">Output Formats</div>`;
+        body += `<div>`;
+        rb.output_formats.forEach(f => {
+          body += `<span style="display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;background:#e1f5ee;color:#085041;margin:0 4px 4px 0">${escHtml(f)}</span>`;
+        });
+        body += `</div></div>`;
+      }
+
+      if (rb.activation_intent) {
+        body += `<div style="margin-bottom:0"><div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin-bottom:4px">Activation Intent</div>`;
+        body += `<div style="font-size:13px">${escHtml(rb.activation_intent)}</div></div>`;
+      }
+
+      body += `</div></div>`;
     }
 
     body += `
