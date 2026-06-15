@@ -467,9 +467,9 @@ function buildBriefHtml({ customer, competitive, media, synth, content, campaign
 
 async function sendEmail(html) {
   const resendKey = process.env.RESEND_API_KEY;
-  const recipient = process.env.BRIEF_RECIPIENT_EMAIL;
+  const recipients = (process.env.BRIEF_RECIPIENT_EMAIL || '').split(',').map(s => s.trim()).filter(Boolean);
   if (!resendKey) throw new Error('RESEND_API_KEY not configured');
-  if (!recipient) throw new Error('BRIEF_RECIPIENT_EMAIL not configured');
+  if (recipients.length === 0) throw new Error('BRIEF_RECIPIENT_EMAIL not configured');
 
   const subject = 'Intelligence Hub Brief — ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/Los_Angeles' });
   const resp = await fetch(RESEND_URL, {
@@ -477,7 +477,7 @@ async function sendEmail(html) {
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendKey}` },
     body: JSON.stringify({
       from: process.env.BRIEF_FROM_EMAIL || 'Intelligence Hub <onboarding@resend.dev>',
-      to: [recipient],
+      to: recipients,
       subject,
       html,
     }),

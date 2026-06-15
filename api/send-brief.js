@@ -9,10 +9,10 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const resendKey = process.env.RESEND_API_KEY;
-  const recipient = process.env.BRIEF_RECIPIENT_EMAIL;
+  const recipients = (process.env.BRIEF_RECIPIENT_EMAIL || '').split(',').map(s => s.trim()).filter(Boolean);
 
   if (!resendKey) return res.status(500).json({ error: 'RESEND_API_KEY not configured' });
-  if (!recipient) return res.status(500).json({ error: 'BRIEF_RECIPIENT_EMAIL not configured' });
+  if (recipients.length === 0) return res.status(500).json({ error: 'BRIEF_RECIPIENT_EMAIL not configured' });
 
   const { subject, html } = req.body;
   if (!subject || !html) {
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         from: process.env.BRIEF_FROM_EMAIL || 'Intelligence Hub <onboarding@resend.dev>',
-        to: [recipient],
+        to: recipients,
         subject,
         html,
       }),
