@@ -478,7 +478,7 @@
     <div class="header-top">
       <div class="logo"><i class="ti ti-antenna" aria-hidden="true"></i></div>
       <h1>Intelligence Hub</h1>
-      <span class="badge">4 agents · Equinix Marketing</span>
+      <span class="badge">7 agents · Equinix Marketing</span>
       <button class="run-btn run-all-btn" id="btn-run-all" onclick="runAll()">
         <i class="ti ti-player-play" aria-hidden="true"></i> Run all agents
       </button>
@@ -498,6 +498,15 @@
       </button>
       <button class="tab" role="tab" onclick="switchTab(3)">
         <i class="ti ti-bulb" aria-hidden="true"></i> Counternarratives
+      </button>
+      <button class="tab" role="tab" onclick="switchTab(4)">
+        <i class="ti ti-pencil" aria-hidden="true"></i> Content Strategy
+      </button>
+      <button class="tab" role="tab" onclick="switchTab(5)">
+        <i class="ti ti-layout-grid" aria-hidden="true"></i> Campaign
+      </button>
+      <button class="tab" role="tab" onclick="switchTab(6)">
+        <i class="ti ti-building-store" aria-hidden="true"></i> Verticals
       </button>
     </div>
   </div>
@@ -669,6 +678,73 @@
       </div>
     </div>
 
+    <!-- TAB 4: Content Strategy & 90-Day Plan -->
+    <div id="tab-4" role="tabpanel" style="display:none">
+      <div class="agent-header">
+        <div class="agent-meta">
+          <h2>Content strategy &amp; 90-day plan</h2>
+          <p>Turns the counternarrative synthesis into content pillars, a phased 90-day execution plan, and prioritized activation recommendations.</p>
+        </div>
+        <button class="run-btn" id="btn-4" onclick="runContentStrategy()">
+          <i class="ti ti-pencil" aria-hidden="true"></i> Build strategy
+        </button>
+      </div>
+      <div class="agent-status-row">
+        <div class="agent-status"><div class="dot" id="dot-synth"></div> Counternarratives ready</div>
+      </div>
+      <div class="output-area" id="output-4">
+        <div class="empty-state">
+          <i class="ti ti-pencil" aria-hidden="true"></i>
+          <p>Run the Counternarrative synthesizer first, then build the strategy</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: Campaign Architecture & Design -->
+    <div id="tab-5" role="tabpanel" style="display:none">
+      <div class="agent-header">
+        <div class="agent-meta">
+          <h2>Campaign architecture &amp; design</h2>
+          <p>Converts the content strategy into a campaign concept, audience architecture, full-funnel structure, and a creative system.</p>
+        </div>
+        <button class="run-btn" id="btn-5" onclick="runCampaign()">
+          <i class="ti ti-layout-grid" aria-hidden="true"></i> Design campaign
+        </button>
+      </div>
+      <div class="agent-status-row">
+        <div class="agent-status"><div class="dot" id="dot-content"></div> Content strategy ready</div>
+      </div>
+      <div class="output-area" id="output-5">
+        <div class="empty-state">
+          <i class="ti ti-layout-grid" aria-hidden="true"></i>
+          <p>Build the content strategy first, then design the campaign</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: Verticals Marketing -->
+    <div id="tab-6" role="tabpanel" style="display:none">
+      <div class="agent-header">
+        <div class="agent-meta">
+          <h2>Verticals marketing agent</h2>
+          <p>Creates industry-specific variations of the content and campaign strategy for financial services, telecom &amp; digital media, high-tech, and public sector.</p>
+        </div>
+        <button class="run-btn" id="btn-6" onclick="runVerticals()">
+          <i class="ti ti-building-store" aria-hidden="true"></i> Adapt to verticals
+        </button>
+      </div>
+      <div class="agent-status-row">
+        <div class="agent-status"><div class="dot" id="dot-content-2"></div> Content strategy ready</div>
+        <div class="agent-status"><div class="dot" id="dot-campaign"></div> Campaign ready</div>
+      </div>
+      <div class="output-area" id="output-6">
+        <div class="empty-state">
+          <i class="ti ti-building-store" aria-hidden="true"></i>
+          <p>Build the content strategy and campaign first, then adapt to verticals</p>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -750,7 +826,7 @@
       t.classList.toggle('active', i === n);
       t.setAttribute('aria-selected', i === n);
     });
-    [0,1,2,3].forEach(i => {
+    [0,1,2,3,4,5,6].forEach(i => {
       document.getElementById('tab-' + i).style.display = i === n ? '' : 'none';
     });
   }
@@ -769,7 +845,7 @@
       prompt += '\nFocus on: ' + CUSTOMER_CONFIG['topics'].items + '.\n';
     }
 
-    prompt += '\nIMPORTANT: Only surface signals from the past 90 days. Ignore anything older.';
+    prompt += '\nIMPORTANT: Only surface signals from the past 14 days. Ignore anything older.';
     prompt += '\nIMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.';
     prompt += '\nIMPORTANT: Use the language buyers actually use — not vendor marketing language. Do NOT use Equinix product names, branded terms, or jargon from Equinix.com. Report raw market sentiment honestly, including frustrations with all vendors including Equinix.';
     prompt += '\nIMPORTANT: For each signal, include a "source" (publication or platform name) and "url" (the actual URL where you found it). Only cite real, verifiable sources.\n';
@@ -804,7 +880,7 @@
     }
 
     prompt += '\nIdentify: dominant analyst narratives shaping buyer decisions, coverage gaps no vendor is filling, emerging frameworks or terms gaining traction, and narratives that challenge the status quo in digital infrastructure.\n';
-    prompt += '\nIMPORTANT: Only surface coverage and commentary from the past 30 days. Ignore anything older.';
+    prompt += '\nIMPORTANT: Only surface coverage and commentary from the past 14 days. Ignore anything older.';
     prompt += '\nIMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.';
     prompt += '\nIMPORTANT: Report what analysts actually wrote — do NOT reframe through any vendor lens. Use the analysts own terminology, not Equinix product names or marketing language. Include critical or skeptical analyst perspectives.';
     prompt += '\nIMPORTANT: For each narrative, include a "source" (publication name) and "url" (the actual URL). Only cite real, verifiable sources.\n';
@@ -907,7 +983,7 @@ ${tierList}
 
 For each tier: what did they actually announce or do, what is the market reading into it, what real risk does this pose to incumbent colocation/interconnection providers, and what gap does it expose.
 
-IMPORTANT: Only surface moves from the past 30 days. Ignore anything older.
+IMPORTANT: Only surface moves from the past 14 days. Ignore anything older.
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
 IMPORTANT: Use neutral industry language — not any vendor's branded terms or marketing jargon. Report competitor strengths honestly, not dismissively. Include a credible source and URL for each tier.
 
@@ -1097,6 +1173,7 @@ ${tierJson}
 
       synthResult = parsed;
       renderSynthesis(parsed, textBlocks);
+      updateChainDots();
     } catch(e) {
       out.innerHTML = '<div class="error-banner"><i class="ti ti-alert-triangle" aria-hidden="true"></i><div><strong>Error:</strong> ' + escHtml(e.message) + '</div></div>';
     }
@@ -1198,6 +1275,318 @@ ${tierJson}
       html += '</div></div>'; // close rb-body, research-brief
     }
 
+    out.innerHTML = html;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+     DOWNSTREAM PIPELINE: Content Strategy → Campaign → Verticals
+     ═══════════════════════════════════════════════════════════ */
+
+  let contentStrategyResult = null;
+  let campaignResult = null;
+  let verticalsResult = null;
+
+  /* ── Shared proxy call + JSON parse helper ── */
+  async function callAgent(systemText, userContent, maxTokens) {
+    const resp = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-5',
+        max_tokens: maxTokens || 8192,
+        system: [{ type: 'text', text: systemText, cache_control: { type: 'ephemeral' } }],
+        messages: [{ role: 'user', content: userContent }]
+      })
+    });
+    if (!resp.ok) throw new Error('API error ' + resp.status + ': ' + (await resp.text()));
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    const raw = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    let parsed = null;
+    try {
+      const clean = raw.replace(/```json|```/g, '').trim();
+      const match = clean.match(/\{[\s\S]*\}/);
+      parsed = JSON.parse(match ? match[0] : clean);
+    } catch(e) {}
+    return { parsed, raw };
+  }
+
+  /* ── Light up dependency dots across the pipeline ── */
+  function updateChainDots() {
+    const set = (id, ready) => { const d = document.getElementById(id); if (d) d.classList.toggle('ready', !!ready); };
+    set('dot-synth', !!(synthResult && synthResult.counternarratives));
+    set('dot-content', !!contentStrategyResult);
+    set('dot-content-2', !!contentStrategyResult);
+    set('dot-campaign', !!campaignResult);
+  }
+
+  /* ── System prompts ── */
+  const CONTENT_STRATEGY_SYSTEM = `You are a senior content strategist for Equinix marketing. You are given a set of counternarrative opportunities and a research brief synthesized from real market intelligence. Turn them into an actionable content strategy and a phased 90-day execution plan.
+
+Your job:
+- Derive 3-4 content pillars from the counternarratives. Each pillar is a durable theme the brand can own, tied back to a specific counternarrative.
+- Build a 90-day plan in three 30-day phases. Each phase needs a theme, 2-3 objectives, specific key content pieces (with format), the channels to run on, and one primary KPI.
+- Produce prioritized activation recommendations — concrete plays the team can execute, each with a channel and a priority.
+
+IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific and executable, not generic.
+IMPORTANT: Do NOT use Equinix product names or branded terms (no "Platform Equinix", "Equinix Fabric", "IBX"). Use plain industry language a buyer would use.
+IMPORTANT: Ground pillars and plays in the actual counternarratives provided — reference them, do not invent new market claims.
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "strategic_summary": "1-2 sentences on the overarching content strategy.",
+  "content_pillars": [
+    {"name": "...", "rationale": "...", "source_narrative": "Which counternarrative this maps to."}
+  ],
+  "ninety_day_plan": [
+    {"phase": "Days 1–30", "theme": "...", "objectives": ["...", "..."], "key_content": [{"title": "...", "format": "..."}], "channels": ["...", "..."], "primary_kpi": "..."},
+    {"phase": "Days 31–60", "theme": "...", "objectives": ["...", "..."], "key_content": [{"title": "...", "format": "..."}], "channels": ["...", "..."], "primary_kpi": "..."},
+    {"phase": "Days 61–90", "theme": "...", "objectives": ["...", "..."], "key_content": [{"title": "...", "format": "..."}], "channels": ["...", "..."], "primary_kpi": "..."}
+  ],
+  "activation_recommendations": [
+    {"play": "...", "description": "...", "channel": "...", "priority": "High"}
+  ]
+}`;
+
+  const CAMPAIGN_SYSTEM = `You are a campaign architect and creative director for Equinix marketing. You are given a content strategy and 90-day plan. Turn it into an integrated campaign architecture and design system.
+
+Your job:
+- Define a campaign concept: a memorable name, a big idea, and a tagline.
+- Map the audience architecture: the key segments, each segment's role in the funnel, and the core message for each.
+- Lay out a full-funnel structure (Awareness, Consideration, Decision) — for each stage give an objective, the hero assets, the channels, and the primary CTA.
+- Specify a creative system: visual direction, tone of voice, and a few recurring motifs.
+- Provide a measurement framework: the metrics that matter, mapped to funnel stage, with a target each.
+
+IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. The campaign must clearly trace back to the content pillars provided.
+IMPORTANT: Do NOT use Equinix product names or branded terms. Use plain industry language.
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "campaign_concept": {"name": "...", "big_idea": "...", "tagline": "..."},
+  "audience_architecture": [
+    {"segment": "...", "funnel_role": "...", "core_message": "..."}
+  ],
+  "funnel_stages": [
+    {"stage": "Awareness", "objective": "...", "assets": ["...", "..."], "channels": ["...", "..."], "cta": "..."},
+    {"stage": "Consideration", "objective": "...", "assets": ["...", "..."], "channels": ["...", "..."], "cta": "..."},
+    {"stage": "Decision", "objective": "...", "assets": ["...", "..."], "channels": ["...", "..."], "cta": "..."}
+  ],
+  "creative_system": {"visual_direction": "...", "tone": "...", "motifs": ["...", "..."]},
+  "measurement_framework": [
+    {"metric": "...", "stage": "...", "target": "..."}
+  ]
+}`;
+
+  const VERTICALS_SYSTEM = `You are a vertical marketing strategist for Equinix. You are given a content strategy and a campaign architecture. Produce industry-specific variations for exactly these four verticals:
+1. Financial services
+2. Telecom & digital media
+3. High-tech (SaaS, clouds, neoclouds)
+4. Public sector (government, education, municipalities)
+
+For each vertical, adapt the core narrative and campaign to that industry's realities — regulatory environment, buying dynamics, and the specific infrastructure pain points that industry feels.
+
+IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Make each vertical genuinely distinct — do not just swap the industry name into the same sentence.
+IMPORTANT: Do NOT use Equinix product names or branded terms. Use language a buyer in that industry would actually use.
+IMPORTANT: Return exactly four verticals, in the order listed above.
+
+Return ONLY valid JSON (no markdown, no explanation):
+{
+  "verticals": [
+    {
+      "vertical": "Financial services",
+      "industry_angle": "How the core narrative reframes for this industry.",
+      "pain_points": ["...", "..."],
+      "tailored_message": "...",
+      "proof_points": ["...", "..."],
+      "campaign_adaptation": "How the campaign concept and channels shift for this vertical.",
+      "priority_channels": ["...", "..."],
+      "sample_headline": "..."
+    },
+    {"vertical": "Telecom & digital media", "industry_angle": "...", "pain_points": ["...","..."], "tailored_message": "...", "proof_points": ["...","..."], "campaign_adaptation": "...", "priority_channels": ["...","..."], "sample_headline": "..."},
+    {"vertical": "High-tech (SaaS, clouds, neoclouds)", "industry_angle": "...", "pain_points": ["...","..."], "tailored_message": "...", "proof_points": ["...","..."], "campaign_adaptation": "...", "priority_channels": ["...","..."], "sample_headline": "..."},
+    {"vertical": "Public sector (government, education, municipalities)", "industry_angle": "...", "pain_points": ["...","..."], "tailored_message": "...", "proof_points": ["...","..."], "campaign_adaptation": "...", "priority_channels": ["...","..."], "sample_headline": "..."}
+  ]
+}`;
+
+  /* ── Generic run wrapper for a downstream agent ── */
+  async function runDownstream(n, missingMsg, hasPrereq, buildContext, systemText, render, store, maxTokens) {
+    const btn = document.getElementById('btn-' + n);
+    const out = document.getElementById('output-' + n);
+    if (!hasPrereq()) {
+      out.innerHTML = '<div class="error-banner"><i class="ti ti-info-circle" aria-hidden="true"></i><div>' + missingMsg + '</div></div>';
+      return;
+    }
+    btn.disabled = true;
+    const original = btn.innerHTML;
+    btn.innerHTML = '<div class="spinner"></div> Running…';
+    out.innerHTML = '<div class="loading-msg"><div class="spinner"></div> Working…</div>';
+    try {
+      const { parsed, raw } = await callAgent(systemText, buildContext(), maxTokens);
+      store(parsed);
+      render(parsed, raw);
+      updateChainDots();
+      btn.innerHTML = '<i class="ti ti-refresh" aria-hidden="true"></i> Re-run';
+    } catch(e) {
+      out.innerHTML = '<div class="error-banner"><i class="ti ti-alert-triangle" aria-hidden="true"></i><div><strong>Error:</strong> ' + escHtml(e.message) + '</div></div>';
+      btn.innerHTML = original;
+    }
+    btn.disabled = false;
+  }
+
+  /* ── Agent 4: Content Strategy ── */
+  function runContentStrategy() {
+    runDownstream(4,
+      'Run the Counternarrative synthesizer (Counternarratives tab) first, then build the strategy.',
+      () => synthResult && synthResult.counternarratives,
+      () => 'Build a content strategy and 90-day plan from this counternarrative synthesis:\n\n' + JSON.stringify(synthResult),
+      CONTENT_STRATEGY_SYSTEM,
+      renderContentStrategy,
+      (p) => { contentStrategyResult = p; },
+      8192);
+  }
+
+  /* ── Agent 5: Campaign Architecture ── */
+  function runCampaign() {
+    runDownstream(5,
+      'Build the content strategy (Content Strategy tab) first, then design the campaign.',
+      () => !!contentStrategyResult,
+      () => 'Design a campaign architecture from this content strategy and 90-day plan:\n\n' + JSON.stringify(contentStrategyResult),
+      CAMPAIGN_SYSTEM,
+      renderCampaign,
+      (p) => { campaignResult = p; },
+      8192);
+  }
+
+  /* ── Agent 6: Verticals ── */
+  function runVerticals() {
+    runDownstream(6,
+      'Build the content strategy and design the campaign first, then adapt to verticals.',
+      () => contentStrategyResult && campaignResult,
+      () => 'Create industry-specific variations for financial services, telecom & digital media, high-tech, and public sector.\n\nCONTENT STRATEGY: ' + JSON.stringify(contentStrategyResult) + '\n\nCAMPAIGN ARCHITECTURE: ' + JSON.stringify(campaignResult),
+      VERTICALS_SYSTEM,
+      renderVerticals,
+      (p) => { verticalsResult = p; },
+      8192);
+  }
+
+  /* ── Renderers ── */
+  function renderList(arr) {
+    return (arr || []).map(x => '<div class="result-item"><div>' + escHtml(x) + '</div></div>').join('');
+  }
+  function tags(arr, cls) {
+    return '<div class="rb-outputs">' + (arr || []).map(x => '<span class="' + (cls || 'rb-output-tag') + '">' + escHtml(x) + '</span>').join('') + '</div>';
+  }
+
+  function renderContentStrategy(parsed, raw) {
+    const out = document.getElementById('output-4');
+    if (!parsed || !parsed.content_pillars) {
+      out.innerHTML = '<div style="font-size:12.5px;line-height:1.7;white-space:pre-wrap">' + escHtml(raw) + '</div>';
+      return;
+    }
+    let html = '';
+    if (parsed.strategic_summary) {
+      html += '<div class="callout success" style="margin-top:0;margin-bottom:14px"><strong>Strategy:</strong> ' + escHtml(parsed.strategic_summary) + '</div>';
+    }
+    html += '<div class="result-section"><div class="result-label">Content pillars</div>';
+    parsed.content_pillars.forEach(p => {
+      html += '<div class="narrative-block"><div class="narrative-title">' + escHtml(p.name) + '</div>'
+        + '<div class="narrative-body">' + escHtml(p.rationale || '') + '</div>'
+        + (p.source_narrative ? '<div class="narrative-body" style="color:var(--text-tertiary)"><strong>From:</strong> ' + escHtml(p.source_narrative) + '</div>' : '')
+        + '</div>';
+    });
+    html += '</div>';
+    if (parsed.ninety_day_plan) {
+      html += '<div class="divider"></div><div class="result-section"><div class="result-label">90-day plan</div>';
+      parsed.ninety_day_plan.forEach(ph => {
+        html += '<div class="narrative-block"><div class="narrative-title">' + escHtml(ph.phase) + ' — ' + escHtml(ph.theme || '') + '</div>';
+        if (ph.objectives) html += '<div class="narrative-body"><strong>Objectives:</strong> ' + escHtml((ph.objectives || []).join('; ')) + '</div>';
+        if (ph.key_content) html += '<div class="narrative-body"><strong>Content:</strong> ' + escHtml((ph.key_content || []).map(c => c.title + ' (' + c.format + ')').join('; ')) + '</div>';
+        if (ph.channels) html += '<div class="narrative-body" style="color:var(--text-tertiary)"><strong>Channels:</strong> ' + escHtml((ph.channels || []).join(', ')) + '</div>';
+        if (ph.primary_kpi) html += '<div class="narrative-body" style="color:var(--accent-text)"><strong>KPI:</strong> ' + escHtml(ph.primary_kpi) + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    if (parsed.activation_recommendations) {
+      html += '<div class="divider"></div><div class="result-section"><div class="result-label">Activation recommendations</div>';
+      parsed.activation_recommendations.forEach(a => {
+        const pr = (a.priority || '').toLowerCase();
+        const cls = pr === 'high' ? 'danger' : pr === 'low' ? 'info' : 'success';
+        html += '<div class="result-item"><div><strong>' + escHtml(a.play) + '</strong> — ' + escHtml(a.description || '')
+          + ' <span class="pill" style="background:var(--' + cls + '-bg);color:var(--' + cls + '-text)">' + escHtml(a.channel || '') + ' · ' + escHtml(a.priority || '') + '</span></div></div>';
+      });
+      html += '</div>';
+    }
+    out.innerHTML = html;
+  }
+
+  function renderCampaign(parsed, raw) {
+    const out = document.getElementById('output-5');
+    if (!parsed || !parsed.campaign_concept) {
+      out.innerHTML = '<div style="font-size:12.5px;line-height:1.7;white-space:pre-wrap">' + escHtml(raw) + '</div>';
+      return;
+    }
+    const c = parsed.campaign_concept;
+    let html = '<div class="research-brief"><div class="rb-header"><i class="ti ti-layout-grid" aria-hidden="true"></i><h3>' + escHtml(c.name || 'Campaign') + '</h3></div>'
+      + '<div class="rb-body"><div class="rb-title">' + escHtml(c.tagline || '') + '</div>'
+      + '<div class="rb-subtitle">' + escHtml(c.big_idea || '') + '</div></div></div>';
+
+    if (parsed.audience_architecture) {
+      html += '<div class="result-section" style="margin-top:14px"><div class="result-label">Audience architecture</div>';
+      parsed.audience_architecture.forEach(a => {
+        html += '<div class="result-item"><div><strong>' + escHtml(a.segment) + '</strong> <span style="color:var(--text-tertiary)">(' + escHtml(a.funnel_role || '') + ')</span> — ' + escHtml(a.core_message || '') + '</div></div>';
+      });
+      html += '</div>';
+    }
+    if (parsed.funnel_stages) {
+      html += '<div class="divider"></div><div class="result-section"><div class="result-label">Funnel structure</div>';
+      parsed.funnel_stages.forEach(s => {
+        html += '<div class="narrative-block"><div class="narrative-title">' + escHtml(s.stage) + '</div>'
+          + '<div class="narrative-body">' + escHtml(s.objective || '') + '</div>'
+          + (s.assets ? '<div class="narrative-body"><strong>Assets:</strong> ' + escHtml((s.assets || []).join(', ')) + '</div>' : '')
+          + (s.channels ? '<div class="narrative-body" style="color:var(--text-tertiary)"><strong>Channels:</strong> ' + escHtml((s.channels || []).join(', ')) + '</div>' : '')
+          + (s.cta ? '<div class="narrative-body" style="color:var(--accent-text)"><strong>CTA:</strong> ' + escHtml(s.cta) + '</div>' : '')
+          + '</div>';
+      });
+      html += '</div>';
+    }
+    if (parsed.creative_system) {
+      const cs = parsed.creative_system;
+      html += '<div class="divider"></div><div class="result-section"><div class="result-label">Creative system</div>'
+        + '<div class="result-item"><div><strong>Visual:</strong> ' + escHtml(cs.visual_direction || '') + '</div></div>'
+        + '<div class="result-item"><div><strong>Tone:</strong> ' + escHtml(cs.tone || '') + '</div></div>'
+        + (cs.motifs ? '<div class="result-item"><div><strong>Motifs:</strong> ' + escHtml((cs.motifs || []).join(', ')) + '</div></div>' : '')
+        + '</div>';
+    }
+    if (parsed.measurement_framework) {
+      html += '<div class="divider"></div><div class="result-section"><div class="result-label">Measurement</div>';
+      parsed.measurement_framework.forEach(m => {
+        html += '<div class="result-item"><div><strong>' + escHtml(m.metric) + '</strong> <span style="color:var(--text-tertiary)">(' + escHtml(m.stage || '') + ')</span> → ' + escHtml(m.target || '') + '</div></div>';
+      });
+      html += '</div>';
+    }
+    out.innerHTML = html;
+  }
+
+  function renderVerticals(parsed, raw) {
+    const out = document.getElementById('output-6');
+    if (!parsed || !parsed.verticals) {
+      out.innerHTML = '<div style="font-size:12.5px;line-height:1.7;white-space:pre-wrap">' + escHtml(raw) + '</div>';
+      return;
+    }
+    let html = '';
+    parsed.verticals.forEach(v => {
+      html += '<div class="narrative-block">'
+        + '<div class="narrative-title">' + escHtml(v.vertical) + '</div>'
+        + (v.sample_headline ? '<div class="callout info" style="margin-top:0;margin-bottom:8px">“' + escHtml(v.sample_headline) + '”</div>' : '')
+        + '<div class="narrative-body"><strong>Angle:</strong> ' + escHtml(v.industry_angle || '') + '</div>'
+        + (v.pain_points ? '<div class="narrative-body"><strong>Pain points:</strong> ' + escHtml((v.pain_points || []).join('; ')) + '</div>' : '')
+        + '<div class="narrative-body"><strong>Message:</strong> ' + escHtml(v.tailored_message || '') + '</div>'
+        + (v.proof_points ? '<div class="narrative-body" style="color:var(--text-tertiary)"><strong>Proof:</strong> ' + escHtml((v.proof_points || []).join('; ')) + '</div>' : '')
+        + '<div class="narrative-body"><strong>Campaign shift:</strong> ' + escHtml(v.campaign_adaptation || '') + '</div>'
+        + (v.priority_channels ? tags(v.priority_channels) : '')
+        + '</div>';
+    });
     out.innerHTML = html;
   }
 
