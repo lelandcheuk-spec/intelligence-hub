@@ -1715,6 +1715,88 @@ Return ONLY valid JSON (no markdown, no explanation):
       body += `</div></div>`;
     }
 
+    // Content Strategy (downstream)
+    if (contentStrategyResult && contentStrategyResult.content_pillars) {
+      const cs = contentStrategyResult;
+      body += `<h2 style="font-size:15px;color:#0f6e56;margin:20px 0 12px;border-bottom:1px solid #eee;padding-bottom:8px">Content Strategy &amp; 90-Day Plan</h2>`;
+      if (cs.strategic_summary) body += `<div style="font-size:13px;margin-bottom:10px"><strong>Strategy:</strong> ${escHtml(cs.strategic_summary)}</div>`;
+      body += `<div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin-bottom:4px">Content Pillars</div>`;
+      cs.content_pillars.forEach(p => {
+        body += `<div style="margin-bottom:8px;font-size:13px;line-height:1.6"><strong>${escHtml(p.name)}</strong> — ${escHtml(p.rationale || '')}${p.source_narrative ? ` <span style="color:#888">(from: ${escHtml(p.source_narrative)})</span>` : ''}</div>`;
+      });
+      if (cs.ninety_day_plan) {
+        body += `<div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin:12px 0 4px">90-Day Plan</div>`;
+        cs.ninety_day_plan.forEach(ph => {
+          body += `<div style="border-left:2px solid #ccc;padding-left:12px;margin-bottom:10px">`;
+          body += `<div style="font-size:13px;font-weight:600">${escHtml(ph.phase)} — ${escHtml(ph.theme || '')}</div>`;
+          if (ph.objectives) body += `<div style="font-size:12px;color:#555"><strong>Objectives:</strong> ${escHtml((ph.objectives || []).join('; '))}</div>`;
+          if (ph.key_content) body += `<div style="font-size:12px;color:#555"><strong>Content:</strong> ${escHtml((ph.key_content || []).map(c => `${c.title} (${c.format})`).join('; '))}</div>`;
+          if (ph.channels) body += `<div style="font-size:12px;color:#888"><strong>Channels:</strong> ${escHtml((ph.channels || []).join(', '))}</div>`;
+          if (ph.primary_kpi) body += `<div style="font-size:12px;color:#085041"><strong>KPI:</strong> ${escHtml(ph.primary_kpi)}</div>`;
+          body += `</div>`;
+        });
+      }
+      if (cs.activation_recommendations) {
+        body += `<div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin:12px 0 4px">Activation Recommendations</div>`;
+        cs.activation_recommendations.forEach(a => {
+          body += `<div style="font-size:13px;margin-bottom:6px"><strong>${escHtml(a.play)}</strong> — ${escHtml(a.description || '')} <span style="color:#888">[${escHtml(a.channel || '')} · ${escHtml(a.priority || '')}]</span></div>`;
+        });
+      }
+    }
+
+    // Campaign Architecture (downstream)
+    if (campaignResult && campaignResult.campaign_concept) {
+      const cp = campaignResult;
+      const cc = cp.campaign_concept;
+      body += `<h2 style="font-size:15px;color:#0f6e56;margin:20px 0 12px;border-bottom:1px solid #eee;padding-bottom:8px">Campaign Architecture</h2>`;
+      body += `<div style="font-size:15px;font-weight:600">${escHtml(cc.name || '')}</div>`;
+      body += `<div style="font-size:13px;font-style:italic;color:#555;margin-bottom:4px">${escHtml(cc.tagline || '')}</div>`;
+      body += `<div style="font-size:13px;color:#555;margin-bottom:12px">${escHtml(cc.big_idea || '')}</div>`;
+      if (cp.audience_architecture) {
+        body += `<div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin-bottom:4px">Audience Architecture</div>`;
+        cp.audience_architecture.forEach(a => { body += `<div style="font-size:13px;margin-bottom:5px"><strong>${escHtml(a.segment)}</strong> <span style="color:#888">(${escHtml(a.funnel_role || '')})</span> — ${escHtml(a.core_message || '')}</div>`; });
+      }
+      if (cp.funnel_stages) {
+        body += `<div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin:12px 0 4px">Funnel Structure</div>`;
+        cp.funnel_stages.forEach(s => {
+          body += `<div style="border-left:2px solid #ccc;padding-left:12px;margin-bottom:10px"><div style="font-size:13px;font-weight:600">${escHtml(s.stage)}</div>`;
+          body += `<div style="font-size:12px;color:#555">${escHtml(s.objective || '')}</div>`;
+          if (s.assets) body += `<div style="font-size:12px;color:#555"><strong>Assets:</strong> ${escHtml((s.assets || []).join(', '))}</div>`;
+          if (s.channels) body += `<div style="font-size:12px;color:#888"><strong>Channels:</strong> ${escHtml((s.channels || []).join(', '))}</div>`;
+          if (s.cta) body += `<div style="font-size:12px;color:#085041"><strong>CTA:</strong> ${escHtml(s.cta)}</div>`;
+          body += `</div>`;
+        });
+      }
+      if (cp.creative_system) {
+        const csys = cp.creative_system;
+        body += `<div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin:12px 0 4px">Creative System</div>`;
+        body += `<div style="font-size:13px"><strong>Visual:</strong> ${escHtml(csys.visual_direction || '')}</div>`;
+        body += `<div style="font-size:13px"><strong>Tone:</strong> ${escHtml(csys.tone || '')}</div>`;
+        if (csys.motifs) body += `<div style="font-size:13px"><strong>Motifs:</strong> ${escHtml((csys.motifs || []).join(', '))}</div>`;
+      }
+      if (cp.measurement_framework) {
+        body += `<div style="font-size:10px;text-transform:uppercase;color:#888;font-weight:500;letter-spacing:0.05em;margin:12px 0 4px">Measurement</div>`;
+        cp.measurement_framework.forEach(m => { body += `<div style="font-size:13px;margin-bottom:4px"><strong>${escHtml(m.metric)}</strong> <span style="color:#888">(${escHtml(m.stage || '')})</span> → ${escHtml(m.target || '')}</div>`; });
+      }
+    }
+
+    // Vertical Variations (downstream)
+    if (verticalsResult && verticalsResult.verticals) {
+      body += `<h2 style="font-size:15px;color:#0f6e56;margin:20px 0 12px;border-bottom:1px solid #eee;padding-bottom:8px">Vertical Variations</h2>`;
+      verticalsResult.verticals.forEach(v => {
+        body += `<div style="border-left:2px solid #ccc;padding-left:14px;margin-bottom:16px">`;
+        body += `<div style="font-size:14px;font-weight:600;margin-bottom:5px">${escHtml(v.vertical)}</div>`;
+        if (v.sample_headline) body += `<div style="background:#e6f1fb;padding:8px 12px;border-radius:6px;font-size:12px;color:#0c447c;margin-bottom:8px">“${escHtml(v.sample_headline)}”</div>`;
+        body += `<div style="font-size:12px;color:#555;line-height:1.6"><strong>Angle:</strong> ${escHtml(v.industry_angle || '')}</div>`;
+        if (v.pain_points) body += `<div style="font-size:12px;color:#555;line-height:1.6"><strong>Pain points:</strong> ${escHtml((v.pain_points || []).join('; '))}</div>`;
+        body += `<div style="font-size:12px;color:#555;line-height:1.6"><strong>Message:</strong> ${escHtml(v.tailored_message || '')}</div>`;
+        if (v.proof_points) body += `<div style="font-size:12px;color:#888;line-height:1.6"><strong>Proof:</strong> ${escHtml((v.proof_points || []).join('; '))}</div>`;
+        body += `<div style="font-size:12px;color:#555;line-height:1.6"><strong>Campaign shift:</strong> ${escHtml(v.campaign_adaptation || '')}</div>`;
+        if (v.priority_channels) body += `<div style="font-size:12px;color:#888;line-height:1.6"><strong>Channels:</strong> ${escHtml((v.priority_channels || []).join(', '))}</div>`;
+        body += `</div>`;
+      });
+    }
+
     body += `
     <div style="margin-top:24px;padding-top:16px;border-top:1px solid #eee;font-size:11px;color:#888">
       Generated by Intelligence Hub · <a href="https://intelligence-hub-psi.vercel.app" style="color:#0f6e56">Open in browser</a>
