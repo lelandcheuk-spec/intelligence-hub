@@ -1,6 +1,6 @@
 # Equinix Intelligence Hub
 
-Four AI agents for marketing intelligence: customer listening, competitive listening, media & analyst listening, and counternarrative synthesis.
+Seven AI agents for marketing intelligence: customer listening, competitive listening, media & analyst listening, counternarrative synthesis, content strategy & 90-day plan, campaign architecture, and vertical variations.
 
 ---
 
@@ -110,3 +110,39 @@ Then open `http://localhost:3000`. You'll need a `.env.local` file:
 ```
 ANTHROPIC_API_KEY=your_key_here
 ```
+
+---
+
+## Automated weekly brief (GitHub Actions)
+
+The full pipeline runs unattended every **Monday at 8:00am Pacific** and emails the brief
+(all seven agents: the three sweeps, synthesis, content strategy, campaign, and verticals).
+It runs as a GitHub Action — not on Vercel — so the multi-step pipeline isn't constrained by
+serverless function timeouts.
+
+- Workflow: [`.github/workflows/weekly-brief.yml`](.github/workflows/weekly-brief.yml)
+- Pipeline script: [`scripts/weekly-brief.mjs`](scripts/weekly-brief.mjs)
+
+### One-time setup — add repository secrets
+
+In GitHub: **Settings → Secrets and variables → Actions → New repository secret**. Add:
+
+| Secret | Required | Notes |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | yes | Same key the app uses |
+| `RESEND_API_KEY` | yes | Your Resend API key |
+| `BRIEF_RECIPIENT_EMAIL` | yes | The inbox the brief is sent to |
+| `BRIEF_FROM_EMAIL` | optional | Defaults to `Intelligence Hub <onboarding@resend.dev>` |
+
+### Schedule & daylight saving
+
+GitHub cron is UTC, so the workflow fires at **both** 15:00 and 16:00 UTC on Mondays.
+The script checks the actual `America/Los_Angeles` time and only sends when it's 08:xx —
+so exactly one brief goes out at 8am Pacific whether it's PST or PDT. The off-target trigger
+exits quietly.
+
+### Test it now
+
+Go to the repo's **Actions → Weekly Intelligence Brief → Run workflow**. Manual runs set
+`FORCE_RUN=true`, which bypasses the time guard and sends immediately — useful for confirming
+your secrets and email delivery without waiting for Monday.

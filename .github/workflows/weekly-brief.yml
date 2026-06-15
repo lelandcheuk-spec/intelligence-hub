@@ -1,0 +1,30 @@
+name: Weekly Intelligence Brief
+
+# Runs the full Intelligence Hub pipeline and emails the brief.
+# Two cron slots cover daylight saving — 15:00 UTC is 8am during PDT,
+# 16:00 UTC is 8am during PST. The script's Pacific-time guard ensures
+# only the slot that lands on 08:xx America/Los_Angeles actually sends,
+# so you get exactly one brief every Monday at 8am Pacific year-round.
+on:
+  schedule:
+    - cron: '0 15 * * 1'   # Mondays 15:00 UTC (08:00 PDT / 07:00 PST)
+    - cron: '0 16 * * 1'   # Mondays 16:00 UTC (09:00 PDT / 08:00 PST)
+  workflow_dispatch:        # manual "Run workflow" button — bypasses the time guard
+
+jobs:
+  brief:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run weekly brief
+        run: node scripts/weekly-brief.mjs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          BRIEF_RECIPIENT_EMAIL: ${{ secrets.BRIEF_RECIPIENT_EMAIL }}
+          BRIEF_FROM_EMAIL: ${{ secrets.BRIEF_FROM_EMAIL }}
+          # Manual runs force-send immediately; scheduled runs respect the 8am-Pacific guard.
+          FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
