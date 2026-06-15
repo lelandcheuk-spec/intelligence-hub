@@ -97,7 +97,7 @@ Search these sources: LinkedIn posts, earnings calls, event sessions, trade pres
 
 Focus on: AI infrastructure priorities, cloud repatriation and cost frustration, network complexity and latency, data sovereignty and compliance, build vs. buy vs. partner for private infrastructure.
 
-IMPORTANT: Only surface signals from the past 14 days. Ignore anything older.
+IMPORTANT: Only surface signals from the past 21 days. Ignore anything older.
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
 IMPORTANT: Use the language buyers actually use — not vendor marketing language. Do NOT use Equinix product names, branded terms, or jargon from Equinix.com. Report raw market sentiment honestly, including frustrations with all vendors including Equinix.
 IMPORTANT: For each signal, include a "source" (publication or platform name) and "url" (the actual URL where you found it). Only cite real, verifiable sources.
@@ -125,7 +125,7 @@ Analyze recent moves from these companies:
 
 For each tier: what did they actually announce or do, what is the market reading into it, what real risk does this pose to incumbent colocation/interconnection providers, and what gap does it expose.
 
-IMPORTANT: Only surface moves from the past 14 days. Ignore anything older.
+IMPORTANT: Only surface moves from the past 21 days. Ignore anything older.
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
 IMPORTANT: Use neutral industry language — not any vendor's branded terms or marketing jargon. Report competitor strengths honestly, not dismissively. Include a credible source and URL for each tier.
 
@@ -148,7 +148,7 @@ Track: AI infrastructure, digital sovereignty and data residency, enterprise net
 
 Identify: dominant analyst narratives shaping buyer decisions, coverage gaps no vendor is filling, emerging frameworks or terms gaining traction, and narratives that challenge the status quo in digital infrastructure.
 
-IMPORTANT: Only surface coverage and commentary from the past 14 days. Ignore anything older.
+IMPORTANT: Only surface coverage and commentary from the past 21 days. Ignore anything older.
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
 IMPORTANT: Report what analysts actually wrote — do NOT reframe through any vendor lens. Use the analysts own terminology, not Equinix product names or marketing language. Include critical or skeptical analyst perspectives.
 IMPORTANT: For each narrative, include a "source" (publication name) and "url" (the actual URL). Only cite real, verifiable sources.
