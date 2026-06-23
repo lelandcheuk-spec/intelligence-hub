@@ -1,15 +1,22 @@
 name: Weekly Intelligence Brief
 
-# Runs the full Intelligence Hub pipeline and emails the brief.
-# Two cron slots cover daylight saving — 15:00 UTC is 8am during PDT,
-# 16:00 UTC is 8am during PST. The script's Pacific-time guard ensures
-# only the slot that lands on 08:xx America/Los_Angeles actually sends,
-# so you get exactly one brief every Monday at 8am Pacific year-round.
+# Runs the full Intelligence Hub pipeline and emails the brief every Monday morning Pacific.
+#
+# Reliability model: GitHub's scheduled triggers are routinely delayed — and occasionally
+# dropped — by anywhere from 15 minutes to a few hours. So instead of demanding an exact
+# fire time (the old approach silently skipped any run that didn't land at 08:xx Pacific),
+# we use three layers:
+#   1. TWO cron slots 2h apart for redundancy — if the first is delayed or dropped, the
+#      second still covers the week.
+#   2. A tolerant guard in the script — send on any Monday in the 6am-12pm Pacific window,
+#      so a delayed run still goes out.
+#   3. A once-per-ISO-week marker, cached between the two slots, so the redundant trigger
+#      never sends a duplicate.
 on:
   schedule:
-    - cron: '0 15 * * 1'   # Mondays 15:00 UTC (08:00 PDT / 07:00 PST)
-    - cron: '0 16 * * 1'   # Mondays 16:00 UTC (09:00 PDT / 08:00 PST)
-  workflow_dispatch:        # manual "Run workflow" button — bypasses the time guard
+    - cron: '0 15 * * 1'   # Mondays 15:00 UTC (~8am PDT / 7am PST) — primary
+    - cron: '0 17 * * 1'   # Mondays 17:00 UTC (~10am PDT / 9am PST) — redundant backup
+  workflow_dispatch:        # manual "Run workflow" button — bypasses the guard and the marker
 
 jobs:
   brief:
@@ -19,6 +26,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Compute ISO-week cache key
+        id: wk
+        run: echo "key=brief-sent-$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+
+      # Restore this week's "already sent" marker, if an earlier slot already sent.
+      - name: Restore weekly-send marker
+        uses: actions/cache/restore@v4
+        with:
+          path: .sent-marker
+          key: ${{ steps.wk.outputs.key }}
+
       - name: Run weekly brief
         run: node scripts/weekly-brief.mjs
         env:
@@ -26,5 +45,20 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           BRIEF_RECIPIENT_EMAIL: ${{ secrets.BRIEF_RECIPIENT_EMAIL }}
           BRIEF_FROM_EMAIL: ${{ secrets.BRIEF_FROM_EMAIL }}
-          # Manual runs force-send immediately; scheduled runs respect the 8am-Pacific guard.
+          # Manual runs force-send immediately; scheduled runs respect the morning guard + marker.
           FORCE_RUN: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
+
+      - name: Did this run send?
+        id: marker
+        if: success()
+        run: |
+          if [ -f .sent-marker ]; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+
+      # Persist the marker so the backup slot this week skips. Scheduled runs only — a manual
+      # test run shouldn't suppress the real Monday send.
+      - name: Save weekly-send marker
+        if: success() && github.event_name == 'schedule' && steps.marker.outputs.exists == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .sent-marker
+          key: ${{ steps.wk.outputs.key }}

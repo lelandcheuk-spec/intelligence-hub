@@ -1,1 +1,4 @@
 .vercel
+
+# weekly-send dedupe marker (created at runtime, cached via Actions)
+.sent-marker
