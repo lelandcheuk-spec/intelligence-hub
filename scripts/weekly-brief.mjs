@@ -19,6 +19,7 @@ const MODEL = 'claude-sonnet-4-5';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const RESEND_URL = 'https://api.resend.com/emails';
 const SENT_MARKER = '.sent-marker'; // once-per-week guard, cached across the two Monday cron slots
+const WINDOW_DAYS = 21; // recency window for the 3 listening sweeps; enforced in code, not just the prompt
 
 /* ── Time guard: only run at 08:xx Monday Pacific unless forced ── */
 function pacificNow() {
@@ -108,7 +109,25 @@ async function callModelJson({ label, retries = 2, userText, ...opts }) {
   return null;
 }
 
-/* ════════════ AGENT PROMPTS (full default scope, 14-day windows) ════════════ */
+/* ── Drop items whose publication date is older than the cutoff (YYYY-MM-DD).
+   The model is unreliable at self-censoring by date, so we enforce it here. Items with a
+   missing or unparseable date are kept (we can't prove they're stale) but logged, so the
+   common case — a clearly old, dated citation — is removed. ── */
+function filterRecent(items, cutoff, label) {
+  if (!Array.isArray(items)) return items;
+  const cutoffMs = Date.parse(cutoff);
+  let dropped = 0, undated = 0;
+  const kept = items.filter(it => {
+    const ms = it && it.date ? Date.parse(it.date) : NaN;
+    if (Number.isNaN(ms)) { undated++; return true; }
+    if (ms < cutoffMs) { dropped++; return false; }
+    return true;
+  });
+  if (dropped || undated) console.log(`${label}: kept ${kept.length}, dropped ${dropped} older than ${cutoff}, ${undated} undated (kept).`);
+  return kept;
+}
+
+/* ════════════ AGENT PROMPTS (full default scope, 21-day windows) ════════════ */
 
 const CUSTOMER_SYSTEM = `You are an independent market research analyst monitoring enterprise IT decision-maker sentiment. Report what buyers are actually saying in their own words — not what any vendor wants to hear.
 
@@ -118,20 +137,20 @@ Search these sources: LinkedIn posts, earnings calls, event sessions, trade pres
 
 Focus on: AI infrastructure priorities, cloud repatriation and cost frustration, network complexity and latency, data sovereignty and compliance, build vs. buy vs. partner for private infrastructure.
 
-IMPORTANT: Only surface signals from the past 21 days. Ignore anything older.
+IMPORTANT: Only include signals whose source was PUBLISHED on or after the cutoff date given in the user message (the last 21 days). Ignore anything older, even if highly relevant. Do not estimate or guess — if you cannot confirm a source was published within the window, leave it out.
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
 IMPORTANT: Use the language buyers actually use — not vendor marketing language. Do NOT use Equinix product names, branded terms, or jargon from Equinix.com. Report raw market sentiment honestly, including frustrations with all vendors including Equinix.
-IMPORTANT: For each signal, include a "source" (publication or platform name) and "url" (the actual URL where you found it). Only cite real, verifiable sources.
+IMPORTANT: For each signal, include a "source" (publication or platform name), "url" (the actual URL where you found it), and "date" (the source's publication date in YYYY-MM-DD format). Only cite real, verifiable sources. The "date" must be the real publication date — it will be checked and any signal older than the cutoff will be discarded.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "top_signals": [
-    {"persona": "CIO", "signal": "...", "implication": "...", "source": "...", "url": "..."},
-    {"persona": "Head of AI / Data", "signal": "...", "implication": "...", "source": "...", "url": "..."},
-    {"persona": "Head of Cloud", "signal": "...", "implication": "...", "source": "...", "url": "..."},
-    {"persona": "CTO", "signal": "...", "implication": "...", "source": "...", "url": "..."},
-    {"persona": "Head of Networking", "signal": "...", "implication": "...", "source": "...", "url": "..."},
-    {"persona": "Head of Infrastructure", "signal": "...", "implication": "...", "source": "...", "url": "..."}
+    {"persona": "CIO", "signal": "...", "implication": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"},
+    {"persona": "Head of AI / Data", "signal": "...", "implication": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"},
+    {"persona": "Head of Cloud", "signal": "...", "implication": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"},
+    {"persona": "CTO", "signal": "...", "implication": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"},
+    {"persona": "Head of Networking", "signal": "...", "implication": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"},
+    {"persona": "Head of Infrastructure", "signal": "...", "implication": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"}
   ],
   "emerging_theme": "One sentence on the dominant cross-persona theme right now."
 }`;
@@ -146,17 +165,17 @@ Analyze recent moves from these companies:
 
 For each tier: what did they actually announce or do, what is the market reading into it, what real risk does this pose to incumbent colocation/interconnection providers, and what gap does it expose.
 
-IMPORTANT: Only surface moves from the past 21 days. Ignore anything older.
+IMPORTANT: Only include moves ANNOUNCED on or after the cutoff date given in the user message (the last 21 days). Ignore anything older, even if highly relevant. If a tier has no genuinely recent move within the window, omit that tier entirely rather than reaching for an older one.
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
-IMPORTANT: Use neutral industry language — not any vendor's branded terms or marketing jargon. Report competitor strengths honestly, not dismissively. Include a credible source and URL for each tier.
+IMPORTANT: Use neutral industry language — not any vendor's branded terms or marketing jargon. Report competitor strengths honestly, not dismissively. For each tier include a credible "source", "url", and "date" (the move's announcement date in YYYY-MM-DD format). The "date" must be real — it will be checked and any tier older than the cutoff will be discarded.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "tiers": [
-    {"tier": "Data center", "key_move": "...", "market_risk": "...", "gap_exposed": "...", "source": "...", "url": "..."},
-    {"tier": "Cloud", "key_move": "...", "market_risk": "...", "gap_exposed": "...", "source": "...", "url": "..."},
-    {"tier": "NaaS", "key_move": "...", "market_risk": "...", "gap_exposed": "...", "source": "...", "url": "..."},
-    {"tier": "Neocloud", "key_move": "...", "market_risk": "...", "gap_exposed": "...", "source": "...", "url": "..."}
+    {"tier": "Data center", "key_move": "...", "market_risk": "...", "gap_exposed": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"},
+    {"tier": "Cloud", "key_move": "...", "market_risk": "...", "gap_exposed": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"},
+    {"tier": "NaaS", "key_move": "...", "market_risk": "...", "gap_exposed": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"},
+    {"tier": "Neocloud", "key_move": "...", "market_risk": "...", "gap_exposed": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"}
   ],
   "headline_vulnerability": "The single biggest competitive threat to incumbent colocation providers right now, in one sentence."
 }`;
@@ -169,17 +188,17 @@ Track: AI infrastructure, digital sovereignty and data residency, enterprise net
 
 Identify: dominant analyst narratives shaping buyer decisions, coverage gaps no vendor is filling, emerging frameworks or terms gaining traction, and narratives that challenge the status quo in digital infrastructure.
 
-IMPORTANT: Only surface coverage and commentary from the past 21 days. Ignore anything older.
+IMPORTANT: Only include coverage and commentary PUBLISHED on or after the cutoff date given in the user message (the last 21 days). Ignore anything older, even if highly relevant. Do not estimate — if you cannot confirm a piece was published within the window, leave it out.
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
 IMPORTANT: Report what analysts actually wrote — do NOT reframe through any vendor lens. Use the analysts own terminology, not Equinix product names or marketing language. Include critical or skeptical analyst perspectives.
-IMPORTANT: For each narrative, include a "source" (publication name) and "url" (the actual URL). Only cite real, verifiable sources.
+IMPORTANT: For each narrative, include a "source" (publication name), "url" (the actual URL), and "date" (the publication date in YYYY-MM-DD format). Only cite real, verifiable sources. The "date" must be the real publication date — it will be checked and any narrative older than the cutoff will be discarded.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
   "dominant_narratives": [
-    {"topic": "...", "narrative": "...", "implication": "...", "source": "...", "url": "..."},
-    {"topic": "...", "narrative": "...", "implication": "...", "source": "...", "url": "..."},
-    {"topic": "...", "narrative": "...", "implication": "...", "source": "...", "url": "..."}
+    {"topic": "...", "narrative": "...", "implication": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"},
+    {"topic": "...", "narrative": "...", "implication": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"},
+    {"topic": "...", "narrative": "...", "implication": "...", "source": "...", "url": "...", "date": "YYYY-MM-DD"}
   ],
   "coverage_gap": "The most important underserved topic in this space right now.",
   "rising_term": "One emerging term or framework gaining analyst traction."
@@ -322,7 +341,8 @@ function buildBriefHtml({ customer, competitive, media, synth, content, campaign
   if (customer && customer.top_signals) {
     body += `<h2 style="${H2};margin-top:0">Customer Listening</h2>`;
     customer.top_signals.forEach(s => {
-      const src = s.url ? `<a href="${s.url}" style="color:#0f6e56;font-size:11px">[${esc(s.source || 'source')}]</a>` : '';
+      const meta = `${esc(s.source || 'source')}${s.date ? ' · ' + esc(s.date) : ''}`;
+      const src = s.url ? `<a href="${s.url}" style="color:#0f6e56;font-size:11px">[${meta}]</a>` : `<span style="color:#888;font-size:11px">[${meta}]</span>`;
       body += `<div style="margin-bottom:10px;font-size:13px;line-height:1.6"><strong>${esc(s.persona)}:</strong> ${esc(s.signal)} <span style="color:#888">→ ${esc(s.implication)}</span> ${src}</div>`;
     });
     if (customer.emerging_theme) body += `<div style="background:#e6f1fb;padding:10px 14px;border-radius:6px;font-size:12px;color:#0c447c;margin:8px 0 20px"><strong>Theme:</strong> ${esc(customer.emerging_theme)}</div>`;
@@ -331,7 +351,8 @@ function buildBriefHtml({ customer, competitive, media, synth, content, campaign
   if (competitive && competitive.tiers) {
     body += `<h2 style="${H2}">Competitive Listening</h2>`;
     competitive.tiers.forEach(t => {
-      const src = t.url ? `<a href="${t.url}" style="color:#0f6e56;font-size:11px">[${esc(t.source || 'source')}]</a>` : '';
+      const meta = `${esc(t.source || 'source')}${t.date ? ' · ' + esc(t.date) : ''}`;
+      const src = t.url ? `<a href="${t.url}" style="color:#0f6e56;font-size:11px">[${meta}]</a>` : `<span style="color:#888;font-size:11px">[${meta}]</span>`;
       body += `<div style="margin-bottom:14px"><div style="${LABEL}">${esc(t.tier)}</div>`;
       body += `<div style="font-size:13px;line-height:1.6"><strong>Move:</strong> ${esc(t.key_move)}</div>`;
       body += `<div style="font-size:13px;line-height:1.6"><strong>Risk:</strong> ${esc(t.market_risk || '')}</div>`;
@@ -343,7 +364,8 @@ function buildBriefHtml({ customer, competitive, media, synth, content, campaign
   if (media && media.dominant_narratives) {
     body += `<h2 style="${H2}">Media & Analyst Listening</h2>`;
     media.dominant_narratives.forEach(d => {
-      const src = d.url ? `<a href="${d.url}" style="color:#0f6e56;font-size:11px">[${esc(d.source || 'source')}]</a>` : '';
+      const meta = `${esc(d.source || 'source')}${d.date ? ' · ' + esc(d.date) : ''}`;
+      const src = d.url ? `<a href="${d.url}" style="color:#0f6e56;font-size:11px">[${meta}]</a>` : `<span style="color:#888;font-size:11px">[${meta}]</span>`;
       body += `<div style="margin-bottom:10px;font-size:13px;line-height:1.6"><strong>${esc(d.topic)}:</strong> ${esc(d.narrative)} <span style="color:#888">→ ${esc(d.implication || '')}</span> ${src}</div>`;
     });
     if (media.coverage_gap) body += `<div style="font-size:13px;margin-top:8px"><strong>Coverage gap:</strong> ${esc(media.coverage_gap)}</div>`;
@@ -536,15 +558,21 @@ async function main() {
 
   const webTools = [{ type: 'web_search_20250305', name: 'web_search' }];
   const today = new Date().toISOString().split('T')[0];
-  const sweepUser = `Run the sweep now. Today’s date is ${today}.`;
+  const cutoff = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const sweepUser = `Run the sweep now. Today’s date is ${today}. CRITICAL: only include items published on or after ${cutoff} (the last ${WINDOW_DAYS} days). Do not include anything older, even if highly relevant. Include the real publication date (YYYY-MM-DD) for every item.`;
 
-  console.log('Running 3 listening sweeps in parallel…');
+  console.log(`Running 3 listening sweeps in parallel… (recency cutoff ${cutoff})`);
   const [customer, competitive, media] = await Promise.all([
     callModelJson({ label: 'Customer sweep', system: CUSTOMER_SYSTEM, tools: webTools, maxTokens: 4096, userText: sweepUser }),
     callModelJson({ label: 'Competitive sweep', system: COMPETITIVE_SYSTEM, tools: webTools, maxTokens: 4096, userText: sweepUser }),
     callModelJson({ label: 'Media sweep', system: MEDIA_SYSTEM, tools: webTools, maxTokens: 4096, userText: sweepUser }),
   ]);
   console.log(`Sweeps done — customer:${!!customer} competitive:${!!competitive} media:${!!media}`);
+
+  // Enforce the recency window in code — the prompt instruction alone leaks stale citations.
+  if (customer && customer.top_signals) customer.top_signals = filterRecent(customer.top_signals, cutoff, 'Customer signals');
+  if (competitive && competitive.tiers) competitive.tiers = filterRecent(competitive.tiers, cutoff, 'Competitive tiers');
+  if (media && media.dominant_narratives) media.dominant_narratives = filterRecent(media.dominant_narratives, cutoff, 'Media narratives');
 
   if (!customer && !competitive && !media) throw new Error('All three sweeps failed to parse — aborting.');
 
@@ -593,4 +621,4 @@ if (process.env.WEEKLY_BRIEF_RUN !== '0') {
   });
 }
 
-export { buildBriefHtml, pacificNow, parseJson, esc };
+export { buildBriefHtml, pacificNow, parseJson, esc, filterRecent };
