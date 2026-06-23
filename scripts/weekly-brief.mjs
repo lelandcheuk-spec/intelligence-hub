@@ -116,14 +116,14 @@ async function callModelJson({ label, retries = 2, userText, ...opts }) {
 function filterRecent(items, cutoff, label) {
   if (!Array.isArray(items)) return items;
   const cutoffMs = Date.parse(cutoff);
-  let dropped = 0, undated = 0;
+  let stale = 0, undated = 0;
   const kept = items.filter(it => {
     const ms = it && it.date ? Date.parse(it.date) : NaN;
-    if (Number.isNaN(ms)) { undated++; return true; }
-    if (ms < cutoffMs) { dropped++; return false; }
+    if (Number.isNaN(ms)) { undated++; return false; } // unverifiable recency → exclude
+    if (ms < cutoffMs) { stale++; return false; }
     return true;
   });
-  if (dropped || undated) console.log(`${label}: kept ${kept.length}, dropped ${dropped} older than ${cutoff}, ${undated} undated (kept).`);
+  if (stale || undated) console.log(`${label}: kept ${kept.length}, dropped ${stale} older than ${cutoff}, dropped ${undated} undated/unverifiable.`);
   return kept;
 }
 
@@ -140,7 +140,7 @@ Focus on: AI infrastructure priorities, cloud repatriation and cost frustration,
 IMPORTANT: Only include signals whose source was PUBLISHED on or after the cutoff date given in the user message (the last 21 days). Ignore anything older, even if highly relevant. Do not estimate or guess — if you cannot confirm a source was published within the window, leave it out.
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
 IMPORTANT: Use the language buyers actually use — not vendor marketing language. Do NOT use Equinix product names, branded terms, or jargon from Equinix.com. Report raw market sentiment honestly, including frustrations with all vendors including Equinix.
-IMPORTANT: For each signal, include a "source" (publication or platform name), "url" (the actual URL where you found it), and "date" (the source's publication date in YYYY-MM-DD format). Only cite real, verifiable sources. The "date" must be the real publication date — it will be checked and any signal older than the cutoff will be discarded.
+IMPORTANT: For each signal, include a "source" (publication or platform name), "url" (the actual URL where you found it), and "date" (the source's publication date in YYYY-MM-DD format). Only cite real, verifiable sources. The "date" must be the real publication date — it is checked in code, and any signal that is older than the cutoff OR lacks a valid date is automatically discarded. So do not include a signal unless you can give it an accurate, recent date.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
@@ -167,7 +167,7 @@ For each tier: what did they actually announce or do, what is the market reading
 
 IMPORTANT: Only include moves ANNOUNCED on or after the cutoff date given in the user message (the last 21 days). Ignore anything older, even if highly relevant. If a tier has no genuinely recent move within the window, omit that tier entirely rather than reaching for an older one.
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
-IMPORTANT: Use neutral industry language — not any vendor's branded terms or marketing jargon. Report competitor strengths honestly, not dismissively. For each tier include a credible "source", "url", and "date" (the move's announcement date in YYYY-MM-DD format). The "date" must be real — it will be checked and any tier older than the cutoff will be discarded.
+IMPORTANT: Use neutral industry language — not any vendor's branded terms or marketing jargon. Report competitor strengths honestly, not dismissively. For each tier include a credible "source", "url", and "date" (the move's announcement date in YYYY-MM-DD format). The "date" must be real — it is checked in code, and any tier that is older than the cutoff OR lacks a valid date is automatically discarded. So omit a tier entirely rather than citing a move you cannot date within the window.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
@@ -191,7 +191,7 @@ Identify: dominant analyst narratives shaping buyer decisions, coverage gaps no 
 IMPORTANT: Only include coverage and commentary PUBLISHED on or after the cutoff date given in the user message (the last 21 days). Ignore anything older, even if highly relevant. Do not estimate — if you cannot confirm a piece was published within the window, leave it out.
 IMPORTANT: Keep each JSON field to 1-2 concise sentences maximum. Be specific but brief.
 IMPORTANT: Report what analysts actually wrote — do NOT reframe through any vendor lens. Use the analysts own terminology, not Equinix product names or marketing language. Include critical or skeptical analyst perspectives.
-IMPORTANT: For each narrative, include a "source" (publication name), "url" (the actual URL), and "date" (the publication date in YYYY-MM-DD format). Only cite real, verifiable sources. The "date" must be the real publication date — it will be checked and any narrative older than the cutoff will be discarded.
+IMPORTANT: For each narrative, include a "source" (publication name), "url" (the actual URL), and "date" (the publication date in YYYY-MM-DD format). Only cite real, verifiable sources. The "date" must be the real publication date — it is checked in code, and any narrative that is older than the cutoff OR lacks a valid date is automatically discarded. So do not include a narrative unless you can give it an accurate, recent date.
 
 Return ONLY valid JSON (no markdown, no explanation):
 {
