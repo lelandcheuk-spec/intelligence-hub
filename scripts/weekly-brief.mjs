@@ -90,6 +90,24 @@ function parseJson(text) {
   }
 }
 
+/* ── Call the model and parse its JSON, retrying the whole call if the reply won't parse.
+   Retries only fire on a parse failure (rare), so normal-run cost is unchanged. On a retry
+   we append a corrective nudge to coax the model back to raw JSON. ── */
+async function callModelJson({ label, retries = 2, userText, ...opts }) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const text = attempt === 0
+      ? userText
+      : `${userText}\n\nIMPORTANT: Your previous reply could not be parsed as JSON. Return ONLY the raw JSON object described above — no markdown, no code fences, no commentary before or after.`;
+    const parsed = parseJson(await callModel({ ...opts, userText: text }));
+    if (parsed) {
+      if (attempt > 0) console.log(`${label}: parsed OK on retry ${attempt}.`);
+      return parsed;
+    }
+    console.warn(`${label}: unparseable JSON (attempt ${attempt + 1}/${retries + 1})${attempt < retries ? ' — retrying…' : ' — giving up.'}`);
+  }
+  return null;
+}
+
 /* ════════════ AGENT PROMPTS (full default scope, 14-day windows) ════════════ */
 
 const CUSTOMER_SYSTEM = `You are an independent market research analyst monitoring enterprise IT decision-maker sentiment. Report what buyers are actually saying in their own words — not what any vendor wants to hear.
@@ -521,14 +539,11 @@ async function main() {
   const sweepUser = `Run the sweep now. Today’s date is ${today}.`;
 
   console.log('Running 3 listening sweeps in parallel…');
-  const [customerRaw, competitiveRaw, mediaRaw] = await Promise.all([
-    callModel({ system: CUSTOMER_SYSTEM, tools: webTools, maxTokens: 4096, userText: sweepUser }),
-    callModel({ system: COMPETITIVE_SYSTEM, tools: webTools, maxTokens: 4096, userText: sweepUser }),
-    callModel({ system: MEDIA_SYSTEM, tools: webTools, maxTokens: 4096, userText: sweepUser }),
+  const [customer, competitive, media] = await Promise.all([
+    callModelJson({ label: 'Customer sweep', system: CUSTOMER_SYSTEM, tools: webTools, maxTokens: 4096, userText: sweepUser }),
+    callModelJson({ label: 'Competitive sweep', system: COMPETITIVE_SYSTEM, tools: webTools, maxTokens: 4096, userText: sweepUser }),
+    callModelJson({ label: 'Media sweep', system: MEDIA_SYSTEM, tools: webTools, maxTokens: 4096, userText: sweepUser }),
   ]);
-  const customer = parseJson(customerRaw);
-  const competitive = parseJson(competitiveRaw);
-  const media = parseJson(mediaRaw);
   console.log(`Sweeps done — customer:${!!customer} competitive:${!!competitive} media:${!!media}`);
 
   if (!customer && !competitive && !media) throw new Error('All three sweeps failed to parse — aborting.');
