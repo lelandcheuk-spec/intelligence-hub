@@ -13,9 +13,12 @@
  * Optional env: BRIEF_FROM_EMAIL, FORCE_RUN ("true" to skip the time guard)
  */
 
+import fs from 'node:fs';
+
 const MODEL = 'claude-sonnet-4-5';
 const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
 const RESEND_URL = 'https://api.resend.com/emails';
+const SENT_MARKER = '.sent-marker'; // once-per-week guard, cached across the two Monday cron slots
 
 /* ── Time guard: only run at 08:xx Monday Pacific unless forced ── */
 function pacificNow() {
@@ -492,10 +495,24 @@ async function sendEmail(html) {
 async function main() {
   const force = process.env.FORCE_RUN === 'true';
   const { weekday, hour } = pacificNow();
-  console.log(`Pacific time check: ${weekday} ${hour}:xx — force=${force}`);
-  if (!force && !(weekday === 'Mon' && hour === 8)) {
-    console.log('Not 8am Monday Pacific — skipping (this is expected for the off-DST trigger).');
-    return;
+  const alreadySent = fs.existsSync(SENT_MARKER);
+  console.log(`Pacific time check: ${weekday} ${hour}:xx — force=${force} alreadySent=${alreadySent}`);
+  // Tolerant guard: GitHub's cron can be delayed or dropped by hours, so we don't demand an
+  // exact fire time. Send on any Monday in the 6am–12pm Pacific window; the once-per-week
+  // marker (cached across the two cron slots) keeps the backup trigger from duplicating.
+  if (!force) {
+    if (weekday !== 'Mon') {
+      console.log('Not Monday Pacific — skipping.');
+      return;
+    }
+    if (hour < 6 || hour >= 12) {
+      console.log(`Outside the Monday 6am–12pm Pacific window (hour=${hour}) — skipping.`);
+      return;
+    }
+    if (alreadySent) {
+      console.log('Brief already sent this week (marker present) — skipping to avoid a duplicate.');
+      return;
+    }
   }
   if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY not configured');
 
@@ -542,6 +559,15 @@ async function main() {
   const html = buildBriefHtml({ customer, competitive, media, synth, content, campaign, verticals });
   const id = await sendEmail(html);
   console.log(`Email sent via Resend — id: ${id}`);
+
+  // Mark this week as sent so the backup cron slot skips. The workflow caches this file
+  // across the two Monday slots (scheduled runs only); manual runs don't persist it.
+  try {
+    fs.writeFileSync(SENT_MARKER, new Date().toISOString() + '\n');
+    console.log(`Wrote ${SENT_MARKER} to suppress this week's duplicate send.`);
+  } catch (e) {
+    console.warn(`Could not write ${SENT_MARKER}: ${e.message}`);
+  }
 }
 
 // Run unless imported for testing (WEEKLY_BRIEF_RUN=0).
