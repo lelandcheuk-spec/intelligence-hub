@@ -54,10 +54,12 @@ jobs:
         run: |
           if [ -f .sent-marker ]; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
 
-      # Persist the marker so the backup slot this week skips. Scheduled runs only — a manual
-      # test run shouldn't suppress the real Monday send.
+      # Persist the marker (keyed by ISO week) whenever a run actually sent, so the backup
+      # slot — or a delayed scheduled run — skips. The script only writes the marker on
+      # Mondays, so a mid-week manual test produces no marker and never suppresses the real
+      # Monday send; a Monday manual run does write it and correctly dedupes the schedule.
       - name: Save weekly-send marker
-        if: success() && github.event_name == 'schedule' && steps.marker.outputs.exists == 'true'
+        if: success() && steps.marker.outputs.exists == 'true'
         uses: actions/cache/save@v4
         with:
           path: .sent-marker
