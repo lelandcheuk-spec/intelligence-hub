@@ -537,16 +537,18 @@ async function main() {
   const { weekday, hour } = pacificNow();
   const alreadySent = fs.existsSync(SENT_MARKER);
   console.log(`Pacific time check: ${weekday} ${hour}:xx — force=${force} alreadySent=${alreadySent}`);
-  // Tolerant guard: GitHub's cron can be delayed or dropped by hours, so we don't demand an
-  // exact fire time. Send on any Monday in the 6am–12pm Pacific window; the once-per-week
-  // marker (cached across the two cron slots) keeps the backup trigger from duplicating.
+  // Tolerant guard: GitHub's cron can be delayed (observed 3+ hours, landing past noon) or
+  // dropped entirely, so we don't demand an exact fire time. Send on any Monday in a wide
+  // 6am–6pm Pacific window; the once-per-week marker keeps the backup trigger from
+  // duplicating. The wide window absorbs any realistic GitHub delay while still landing the
+  // brief on Monday during business hours.
   if (!force) {
     if (weekday !== 'Mon') {
       console.log('Not Monday Pacific — skipping.');
       return;
     }
-    if (hour < 6 || hour >= 12) {
-      console.log(`Outside the Monday 6am–12pm Pacific window (hour=${hour}) — skipping.`);
+    if (hour < 6 || hour >= 18) {
+      console.log(`Outside the Monday 6am–6pm Pacific window (hour=${hour}) — skipping.`);
       return;
     }
     if (alreadySent) {
@@ -603,13 +605,17 @@ async function main() {
   const id = await sendEmail(html);
   console.log(`Email sent via Resend — id: ${id}`);
 
-  // Mark this week as sent so the backup cron slot skips. The workflow caches this file
-  // across the two Monday slots (scheduled runs only); manual runs don't persist it.
-  try {
-    fs.writeFileSync(SENT_MARKER, new Date().toISOString() + '\n');
-    console.log(`Wrote ${SENT_MARKER} to suppress this week's duplicate send.`);
-  } catch (e) {
-    console.warn(`Could not write ${SENT_MARKER}: ${e.message}`);
+  // Mark this week as sent so any later slot (or a delayed scheduled run) skips. We only
+  // write the marker on Mondays — so a Monday manual run also suppresses the scheduled
+  // duplicate, while a mid-week manual test never suppresses the upcoming Monday send. The
+  // workflow caches this file (keyed by ISO week) whenever it exists after a successful run.
+  if (weekday === 'Mon') {
+    try {
+      fs.writeFileSync(SENT_MARKER, new Date().toISOString() + '\n');
+      console.log(`Wrote ${SENT_MARKER} to suppress this week's duplicate send.`);
+    } catch (e) {
+      console.warn(`Could not write ${SENT_MARKER}: ${e.message}`);
+    }
   }
 }
 
