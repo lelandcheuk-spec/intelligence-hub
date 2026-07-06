@@ -109,22 +109,28 @@ async function callModelJson({ label, retries = 2, userText, ...opts }) {
   return null;
 }
 
-/* ── Drop items whose publication date is older than the cutoff (YYYY-MM-DD).
-   The model is unreliable at self-censoring by date, so we enforce it here. Items with a
-   missing or unparseable date are kept (we can't prove they're stale) but logged, so the
-   common case — a clearly old, dated citation — is removed. ── */
-function filterRecent(items, cutoff, label) {
-  if (!Array.isArray(items)) return items;
+/* ── Apply the recency window to a list of dated items.
+   Returns { items, fallback }. Normally keeps only items dated on/after the cutoff (newest
+   first). But the model often can't surface anything within the window, which would leave a
+   section blank — so when nothing qualifies, we fall back to the few most-recent dated items
+   found (fallback=true) so the section is never empty and the reader sees the real dates.
+   Undated/unparseable items are never shown (we can't verify their recency). ── */
+function applyRecency(items, cutoff, label, fallbackN = 3) {
+  if (!Array.isArray(items)) return { items, fallback: false };
   const cutoffMs = Date.parse(cutoff);
-  let stale = 0, undated = 0;
-  const kept = items.filter(it => {
-    const ms = it && it.date ? Date.parse(it.date) : NaN;
-    if (Number.isNaN(ms)) { undated++; return false; } // unverifiable recency → exclude
-    if (ms < cutoffMs) { stale++; return false; }
-    return true;
-  });
-  if (stale || undated) console.log(`${label}: kept ${kept.length}, dropped ${stale} older than ${cutoff}, dropped ${undated} undated/unverifiable.`);
-  return kept;
+  const dated = items
+    .map(it => ({ it, ms: it && it.date ? Date.parse(it.date) : NaN }))
+    .filter(x => !Number.isNaN(x.ms))
+    .sort((a, b) => b.ms - a.ms);
+  const undated = items.length - dated.length;
+  const recent = dated.filter(x => x.ms >= cutoffMs);
+  if (recent.length > 0) {
+    console.log(`${label}: kept ${recent.length} within window (of ${items.length}; ${undated} undated dropped).`);
+    return { items: recent.map(x => x.it), fallback: false };
+  }
+  const freshest = dated.slice(0, fallbackN).map(x => x.it);
+  console.log(`${label}: 0 within window; falling back to ${freshest.length} most-recent (of ${items.length}; ${undated} undated dropped).`);
+  return { items: freshest, fallback: freshest.length > 0 };
 }
 
 /* ════════════ AGENT PROMPTS (full default scope, 21-day windows) ════════════ */
@@ -340,6 +346,7 @@ function buildBriefHtml({ customer, competitive, media, synth, content, campaign
 
   if (customer && customer.top_signals) {
     body += `<h2 style="${H2};margin-top:0">Customer Listening</h2>`;
+    if (customer.recencyFallback) body += `<div style="font-size:11px;color:#8a6d00;background:#fdf6e3;padding:6px 10px;border-radius:5px;margin-bottom:10px">No signals within the last ${WINDOW_DAYS} days — showing the most recent available.</div>`;
     customer.top_signals.forEach(s => {
       const meta = `${esc(s.source || 'source')}${s.date ? ' · ' + esc(s.date) : ''}`;
       const src = s.url ? `<a href="${s.url}" style="color:#0f6e56;font-size:11px">[${meta}]</a>` : `<span style="color:#888;font-size:11px">[${meta}]</span>`;
@@ -350,6 +357,7 @@ function buildBriefHtml({ customer, competitive, media, synth, content, campaign
 
   if (competitive && competitive.tiers) {
     body += `<h2 style="${H2}">Competitive Listening</h2>`;
+    if (competitive.recencyFallback) body += `<div style="font-size:11px;color:#8a6d00;background:#fdf6e3;padding:6px 10px;border-radius:5px;margin-bottom:10px">No moves within the last ${WINDOW_DAYS} days — showing the most recent available.</div>`;
     competitive.tiers.forEach(t => {
       const meta = `${esc(t.source || 'source')}${t.date ? ' · ' + esc(t.date) : ''}`;
       const src = t.url ? `<a href="${t.url}" style="color:#0f6e56;font-size:11px">[${meta}]</a>` : `<span style="color:#888;font-size:11px">[${meta}]</span>`;
@@ -363,6 +371,7 @@ function buildBriefHtml({ customer, competitive, media, synth, content, campaign
 
   if (media && media.dominant_narratives) {
     body += `<h2 style="${H2}">Media & Analyst Listening</h2>`;
+    if (media.recencyFallback) body += `<div style="font-size:11px;color:#8a6d00;background:#fdf6e3;padding:6px 10px;border-radius:5px;margin-bottom:10px">No coverage within the last ${WINDOW_DAYS} days — showing the most recent available.</div>`;
     media.dominant_narratives.forEach(d => {
       const meta = `${esc(d.source || 'source')}${d.date ? ' · ' + esc(d.date) : ''}`;
       const src = d.url ? `<a href="${d.url}" style="color:#0f6e56;font-size:11px">[${meta}]</a>` : `<span style="color:#888;font-size:11px">[${meta}]</span>`;
@@ -561,7 +570,7 @@ async function main() {
   const webTools = [{ type: 'web_search_20250305', name: 'web_search' }];
   const today = new Date().toISOString().split('T')[0];
   const cutoff = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  const sweepUser = `Run the sweep now. Today’s date is ${today}. CRITICAL: only include items published on or after ${cutoff} (the last ${WINDOW_DAYS} days). Do not include anything older, even if highly relevant. Include the real publication date (YYYY-MM-DD) for every item.`;
+  const sweepUser = `Run the sweep now. Today’s date is ${today}. Search RECENCY-FIRST: use queries that include the current month and year and terms like "latest", "this week", "past two weeks"; run several searches; and prioritize the newest results over well-known older ones. Work hard to surface items from the last few days. CRITICAL: only include items published on or after ${cutoff} (the last ${WINDOW_DAYS} days). Do not include anything older, even if highly relevant. Include the real publication date (YYYY-MM-DD) for every item.`;
 
   console.log(`Running 3 listening sweeps in parallel… (recency cutoff ${cutoff})`);
   const [customer, competitive, media] = await Promise.all([
@@ -572,9 +581,20 @@ async function main() {
   console.log(`Sweeps done — customer:${!!customer} competitive:${!!competitive} media:${!!media}`);
 
   // Enforce the recency window in code — the prompt instruction alone leaks stale citations.
-  if (customer && customer.top_signals) customer.top_signals = filterRecent(customer.top_signals, cutoff, 'Customer signals');
-  if (competitive && competitive.tiers) competitive.tiers = filterRecent(competitive.tiers, cutoff, 'Competitive tiers');
-  if (media && media.dominant_narratives) media.dominant_narratives = filterRecent(media.dominant_narratives, cutoff, 'Media narratives');
+  // applyRecency falls back to the freshest items found (flagged) when nothing is within the
+  // window, so a slow week produces a dated "most recent available" section, never a blank one.
+  if (customer && customer.top_signals) {
+    const r = applyRecency(customer.top_signals, cutoff, 'Customer signals');
+    customer.top_signals = r.items; customer.recencyFallback = r.fallback;
+  }
+  if (competitive && competitive.tiers) {
+    const r = applyRecency(competitive.tiers, cutoff, 'Competitive tiers');
+    competitive.tiers = r.items; competitive.recencyFallback = r.fallback;
+  }
+  if (media && media.dominant_narratives) {
+    const r = applyRecency(media.dominant_narratives, cutoff, 'Media narratives');
+    media.dominant_narratives = r.items; media.recencyFallback = r.fallback;
+  }
 
   if (!customer && !competitive && !media) throw new Error('All three sweeps failed to parse — aborting.');
 
@@ -627,4 +647,4 @@ if (process.env.WEEKLY_BRIEF_RUN !== '0') {
   });
 }
 
-export { buildBriefHtml, pacificNow, parseJson, esc, filterRecent };
+export { buildBriefHtml, pacificNow, parseJson, esc, applyRecency };
