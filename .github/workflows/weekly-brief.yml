@@ -4,7 +4,7 @@ name: Weekly Intelligence Brief
 #
 # Reliability model: GitHub's scheduled triggers are routinely delayed — and occasionally
 # dropped — by anywhere from 15 minutes to a few hours. So instead of demanding an exact
-# fire time (the old approach silently skipped any run that didn't land at 08:xx Pacific),
+# fire time (the old approach skipped any run that didn't land at 08:xx Pacific),
 # we use three layers:
 #   1. TWO cron slots 2h apart for redundancy — if the first is delayed or dropped, the
 #      second still covers the week.
